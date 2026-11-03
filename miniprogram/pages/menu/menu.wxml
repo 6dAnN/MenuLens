@@ -1,0 +1,138 @@
+<nav-bar title="识别结果" bind:ask="onAsk" />
+
+<view class="page has-navbar">
+  <!-- 识别进度（替代空转菊花） -->
+  <block wx:if="{{scanning}}">
+    <view class="thinking-card">
+      <view class="tc-head">✦ 正在识别<span class="tc-time">{{scanTime}}</span></view>
+      <view class="tc-step {{item.state}}" wx:for="{{scanSteps}}" wx:key="text">
+        <text class="ts-dot">{{item.state === 'done' ? '✓' : ''}}</text>
+        <text>{{item.text}}</text>
+      </view>
+    </view>
+    <view class="cancel-btn" bindtap="cancelScan">取消</view>
+  </block>
+
+  <!-- 识别结果 -->
+  <block wx:else>
+    <view class="menu-meta">
+      <text class="mm-name">{{meta.restaurant}}</text>
+      <text class="mm-sub">{{meta.cuisine}} · {{meta.pages}} 页</text>
+    </view>
+
+    <view class="notice-bar info" wx:if="{{excludedCount > 0}}">
+      <text>🚫</text>
+      <text>已按忌口排除 {{excludedCount}} 道：{{excludedText}}</text>
+    </view>
+
+    <block wx:for="{{groupedList}}" wx:key="cat">
+      <view class="section-title" style="font-size:26rpx;color:var(--text-secondary)">
+        {{item.cat}} · {{item.items.length}}
+      </view>
+      <dish-card
+        wx:for="{{item.items}}" wx:for-item="dish" wx:key="key"
+        item="{{dish}}" expanded="{{expandedKey === dish.key}}"
+        bind:toggle="onToggleExpand"
+        bind:recipe="onRecipe"
+        bind:fix="onFix"
+        bind:pickcand="onPickCand"
+        bind:source="onSource" />
+    </block>
+
+    <block wx:if="{{riskyList.length}}">
+      <view class="section-title risky-title">⚠ 没认准的 {{riskyList.length}} 项</view>
+      <dish-card
+        wx:for="{{riskyList}}" wx:key="key"
+        item="{{item}}"
+        bind:toggle="onToggleExpand"
+        bind:recipe="onRecipe"
+        bind:fix="onFix"
+        bind:pickcand="onPickCand"
+        bind:source="onSource" />
+    </block>
+
+    <view class="pad-bottom" style="height:220rpx"></view>
+  </block>
+</view>
+
+<!-- 吸底 CTA -->
+<view class="sticky-cta" wx:if="{{!scanning && items.length}}">
+  <view class="sc-info">
+    <text>已识别 {{items.length}} 项 · {{uncertainCount}} 项待确认</text>
+    <text class="sc-help" bindtap="onConfHelp">?</text>
+  </view>
+  <view class="sc-ctx">
+    <text class="xtag">👥 {{ctx.servings}} 人</text>
+    <text class="xtag">💰 ¥{{ctx.budget}}</text>
+    <text class="xtag">🌶 {{spiceText}}</text>
+    <text class="xtag on" wx:if="{{ctx.avoid.length}}">🚫 {{avoidText}}</text>
+  </view>
+  <view class="btn-primary" bindtap="openConstraint">✦ 生成点单方案</view>
+</view>
+
+<!-- 约束面板 -->
+<view class="mask" wx:if="{{showConstraint}}" bindtap="closeConstraint"></view>
+<view class="sheet" wx:if="{{showConstraint}}" style="transform: translateY(0)">
+  <view class="sh-handle"></view>
+  <view class="sh-head">
+    <text class="sh-title">调整你的需求</text>
+    <text class="btn-ghost" bindtap="resetCtx">重置</text>
+  </view>
+  <scroll-view scroll-y class="sh-body">
+    <view class="ctl-group">
+      <view class="ctl-label">用餐人数</view>
+      <view class="stepper">
+        <view class="st-btn {{ctx.servings <= 1 ? 'disabled' : ''}}" data-d="-1" bindtap="changeServings">−</view>
+        <text class="st-num">{{ctx.servings}} 人</text>
+        <view class="st-btn {{ctx.servings >= 20 ? 'disabled' : ''}}" data-d="1" bindtap="changeServings">+</view>
+      </view>
+    </view>
+
+    <view class="ctl-group">
+      <view class="ctl-label">总预算 <text class="cl-val">¥{{ctx.budget}}</text></view>
+      <view class="budget-box">
+        <text>¥</text>
+        <input type="number" value="{{ctx.budget}}" bindinput="onBudget"
+               placeholder="0" placeholder-class="ph" />
+      </view>
+      <slider class="budget-slider" min="0" max="1000" step="10"
+              value="{{ctx.budget}}" activeColor="#FF6B35"
+              backgroundColor="#F0E6DC" block-size="22" bindchanging="onBudgetSlider"
+              bindchange="onBudgetSlider" />
+      <view class="slider-scale"><text>¥0</text><text>¥500</text><text>¥1000</text></view>
+    </view>
+
+    <view class="ctl-group">
+      <view class="ctl-label">辣度</view>
+      <view class="segmented">
+        <view class="seg {{ctx.spiceLevel === item.k ? 'on' : ''}}"
+              wx:for="{{spiceOptions}}" wx:key="k"
+              data-v="{{item.k}}" bindtap="setSpice">{{item.t}}</view>
+      </view>
+    </view>
+
+    <view class="ctl-group">
+      <view class="ctl-label">忌口<text class="cl-sub">已选 {{ctx.avoid.length}} 项</text></view>
+      <view class="chip-wrap">
+        <view class="chip {{item.on ? 'on' : ''}}"
+              wx:for="{{avoidChips}}" wx:key="v"
+              data-v="{{item.v}}" bindtap="toggleAvoid">
+          {{item.on ? '✓ ' : ''}}{{item.v}}
+        </view>
+      </view>
+    </view>
+
+    <view class="ctl-group">
+      <view class="ctl-label">用餐场景</view>
+      <view class="segmented">
+        <view class="seg {{ctx.occasion === item.k ? 'on' : ''}}"
+              wx:for="{{occasionOptions}}" wx:key="k"
+              data-v="{{item.k}}" bindtap="setOccasion">{{item.t}}</view>
+      </view>
+    </view>
+
+    <view class="estimate-hint">{{estimateText}}</view>
+    <view class="btn-primary" bindtap="doPlan">✦ 生成新方案</view>
+    <view style="height:40rpx"></view>
+  </scroll-view>
+</view>

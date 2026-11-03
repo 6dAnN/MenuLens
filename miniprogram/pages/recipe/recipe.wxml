@@ -1,0 +1,120 @@
+<nav-bar title="{{mode === 'list' ? 'AI 菜谱' : '菜谱'}}" showBack="{{mode !== 'list'}}" />
+
+<!-- 列表模式（Tab 首页） -->
+<view class="page has-navbar" wx:if="{{mode === 'list'}}">
+  <view class="recipe-hero-card">
+    <view class="rh-title">冰箱里有什么？</view>
+    <view class="rh-sub">告诉我现有食材，我给你能做的菜</view>
+  </view>
+
+  <view class="section-title">快速选择</view>
+  <view class="chip-wrap">
+    <view class="chip {{item.on ? 'on' : ''}}"
+          wx:for="{{haveOptions}}" wx:key="v"
+          data-v="{{item.v}}" bindtap="toggleHave">{{item.v}}</view>
+  </view>
+
+  <view class="section-title">口味偏好</view>
+  <view class="segmented">
+    <view class="seg {{taste === 'light' ? 'on' : ''}}" data-v="light" bindtap="setTaste">清淡</view>
+    <view class="seg {{taste === 'normal' ? 'on' : ''}}" data-v="normal" bindtap="setTaste">正常</view>
+    <view class="seg {{taste === 'heavy' ? 'on' : ''}}" data-v="heavy" bindtap="setTaste">重口</view>
+  </view>
+
+  <view class="section-title">
+    烹饪时间<text class="st-sub">{{time}} 分钟内</text>
+  </view>
+  <slider class="time-slider" min="10" max="60" step="5" value="{{time}}"
+          activeColor="#FF6B35" backgroundColor="#F0E6DC"
+          block-size="22" bindchange="setTime" />
+
+  <view class="btn-primary" style="margin-top:40rpx" bindtap="genRecipe">✦ 生成菜谱</view>
+
+  <view class="section-title">热门推荐</view>
+  <view class="hist-card" wx:for="{{hotList}}" wx:key="name"
+        data-name="{{item.name}}" bindtap="openRecipe">
+    <view class="hist-thumb">🍳</view>
+    <view class="hist-info">
+      <view class="hist-t">{{item.name}}</view>
+      <view class="hist-s">{{item.snippet}}</view>
+      <view class="hist-m">
+        <text>⏱ {{item.time}}分钟</text>
+        <text>📊 {{item.diffText}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view style="height:180rpx"></view>
+</view>
+
+<!-- 详情模式 -->
+<view class="page has-navbar" wx:else>
+  <view class="recipe-hero">
+    <view class="dish-art" style="--fdA:#F0B45C;--fdB:#C4622A;--fdC:#6E9B3C;--fdD:#E4B94E"></view>
+  </view>
+
+  <view class="recipe-title-card">
+    <view class="rt-name">{{recipe.name}}</view>
+    <view class="rt-en">{{recipe.en}}</view>
+    <view class="rt-match" wx:if="{{recipe.match}}">匹配度 {{matchPct}}%</view>
+  </view>
+
+  <view class="meta-row">
+    <view class="meta-pill">
+      <text class="mp-i">⏱</text><text class="mp-v">{{recipe.time}}分钟</text><text class="mp-l">耗时</text>
+    </view>
+    <view class="meta-pill">
+      <text class="mp-i">📊</text><text class="mp-v">{{diffText}}</text><text class="mp-l">难度</text>
+    </view>
+    <view class="meta-pill">
+      <text class="mp-i">👥</text><text class="mp-v">{{recipe.servings}}人份</text><text class="mp-l">份量</text>
+    </view>
+  </view>
+
+  <view class="card" style="margin-top:24rpx">
+    <view class="card-title">食材清单</view>
+    <view class="ing-note" wx:if="{{haveText}}">
+      按你现有的：{{haveText}}
+    </view>
+    <view class="ing-line {{item.have ? 'have' : 'miss'}}"
+          wx:for="{{ingredients}}" wx:key="name">
+      <text class="ig-mark">{{item.have ? '✓' : ''}}</text>
+      <text class="ig-n">{{item.name}}</text>
+      <text class="ig-badge">{{item.have ? '已有' : '缺少'}}</text>
+    </view>
+  </view>
+
+  <view class="notice-bar info" wx:if="{{recipe.tips}}">
+    <text>🔑</text>
+    <text><text class="nb-b">关键技巧</text>\n{{recipe.tips}}</text>
+  </view>
+
+  <view class="card" style="margin-top:24rpx">
+    <view class="card-title">做法步骤</view>
+    <view class="step" wx:for="{{recipe.steps}}" wx:key="t">
+      <text class="step-num">{{index + 1}}</text>
+      <view class="step-body">
+        <view class="step-t">{{item.t}}</view>
+        <view class="step-d">{{item.d}}</view>
+        <view class="step-tip" wx:if="{{item.tip}}">
+          <text>💡</text><text>{{item.tip}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="card" wx:if="{{recipe.pairWith && recipe.pairWith.length}}" style="margin-top:24rpx">
+    <view class="card-title">配什么好</view>
+    <view class="chip-wrap">
+      <view class="chip" wx:for="{{recipe.pairWith}}" wx:key="*this"
+            data-name="{{item}}" bindtap="openRecipe">{{item}}</view>
+    </view>
+  </view>
+
+  <view class="cta-row">
+    <view class="btn-secondary" bindtap="fav">☆ 收藏</view>
+    <view class="btn-secondary" bindtap="onShare">📤 分享</view>
+  </view>
+
+  <view style="height:120rpx"></view>
+</view>

@@ -1,0 +1,9 @@
+{
+  "name": "menulens-miniprogram",
+  "version": "1.0.0",
+  "description": "MenuLens · 你的 AI 美食伴侣（微信小程序）",
+  "private": true,
+  "dependencies": {
+    "@tencent-ai/workbuddy-cloud-sdk": "dev"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "usingComponents": {
+    "nav-bar": "/components/nav-bar/index",
+    "dish-card": "/components/dish-card/index"
+  },
+  "navigationStyle": "custom"
+}

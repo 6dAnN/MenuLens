@@ -1,0 +1,31 @@
+.mine-head {
+  margin: 0 -40rpx; padding: 44rpx 40rpx 56rpx;
+  background: var(--brand-gradient); color: #fff;
+  display: flex; align-items: flex-start;
+}
+.mine-avatar {
+  width: 112rpx; height: 112rpx; border-radius: 50%;
+  background: rgba(255,255,255,.24);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 54rpx; flex-shrink: 0; margin-right: 28rpx;
+  border: 4rpx solid rgba(255,255,255,.4);
+}
+.mine-info { flex: 1; }
+.mine-name { font-size: 36rpx; font-weight: 700; }
+.mine-sub { font-size: 26rpx; opacity: .9; margin-top: 4rpx; }
+.mine-stats { display: flex; margin-top: 24rpx; }
+.mine-stat { margin-right: 44rpx; }
+.ms-v { font-size: 38rpx; font-weight: 700; }
+.ms-l { font-size: 23rpx; opacity: .85; }
+
+.set-row {
+  background: var(--bg-surface); border-radius: var(--r-card);
+  box-shadow: var(--shadow-sm); padding: 30rpx;
+  margin-bottom: 22rpx; display: flex; align-items: center;
+}
+.set-row:active { transform: scale(.99); }
+.sr-i { font-size: 38rpx; margin-right: 24rpx; }
+.sr-t { font-size: 30rpx; font-weight: 500; flex: 1; }
+.sr-s { display: block; font-size: 24rpx; color: var(--text-tertiary); font-weight: 400; margin-top: 4rpx; }
+.sr-r { font-size: 26rpx; color: var(--text-tertiary); margin-right: 8rpx; }
+.sr-arrow { color: var(--text-tertiary); font-size: 32rpx; }

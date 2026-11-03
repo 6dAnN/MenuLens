@@ -1,0 +1,70 @@
+<nav-bar fg title="" bind:ask="onAsk" />
+
+<view class="page has-navbar-hero">
+  <!-- Hero -->
+  <view class="hero">
+    <view class="hero-img">
+      <view class="hero-food">
+        <view class="plate"></view>
+        <view class="fd fd1"></view><view class="fd fd2"></view>
+        <view class="fd fd3"></view><view class="fd fd4"></view>
+        <view class="fd fd5"></view>
+        <view class="steam"><view class="s1"></view><view class="s2"></view><view class="s3"></view></view>
+      </view>
+    </view>
+    <view class="scan-cta" bindtap="goScan">📷　扫 菜 单</view>
+  </view>
+
+  <view class="hero-content">
+    <view class="hero-brand">
+      <text class="logo">MenuLens</text>
+      <text class="hero-tag">AI</text>
+    </view>
+    <view class="hero-slogan">拍一张菜单，安心点一桌菜</view>
+  </view>
+
+  <!-- 次入口 -->
+  <view class="quick-grid">
+    <view class="quick-card" bindtap="goScan">
+      <text class="qi">🍽</text>
+      <text class="qt">扫菜单点菜</text>
+      <text class="qs">上传菜单，AI 帮你配一桌</text>
+    </view>
+    <view class="quick-card" bindtap="goDish">
+      <text class="qi">🧑‍🍳</text>
+      <text class="qt">拍照识菜</text>
+      <text class="qs">看到好菜，问它做法</text>
+    </view>
+    <view class="quick-card" bindtap="goRecipe">
+      <text class="qi">📖</text>
+      <text class="qt">AI 菜谱</text>
+      <text class="qs">冰箱里有什么就做什么</text>
+    </view>
+    <view class="quick-card" bindtap="goHistory">
+      <text class="qi">🕘</text>
+      <text class="qt">历史记录</text>
+      <text class="qs">翻回上次那家店</text>
+    </view>
+  </view>
+
+  <!-- 忌口速览 -->
+  <view class="avoid-bar" bindtap="openAvoid">
+    <text class="ab-icon">🚫</text>
+    <view class="ab-text">忌口已设置：{{avoidText}}</view>
+    <text class="ab-edit">编辑</text>
+  </view>
+
+  <!-- 对话入口 -->
+  <view class="chat-entry" bindtap="onAsk">
+    <view class="ce-icon">✦</view>
+    <text class="ce-txt">有什么想吃的？问我 →</text>
+  </view>
+
+  <!-- AI 引擎状态：如实告诉用户当前推理由谁完成 -->
+  <view class="engine-bar {{cloudReady ? 'live' : 'offline'}}" bindtap="openAi">
+    <text class="eb-dot"></text>
+    <text class="eb-txt">{{engineName}}</text>
+  </view>
+
+  <view class="pad-bottom"></view>
+</view>

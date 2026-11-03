@@ -1,0 +1,96 @@
+<nav-bar title="AI 设置与忌口" />
+
+<view class="page has-navbar">
+  <!-- ============ AI 引擎 ============ -->
+  <view class="card" style="margin-bottom:32rpx">
+    <view class="card-title">
+      AI 引擎<text class="card-sub">{{engineName}}</text>
+    </view>
+
+    <view class="notice-bar {{cloudReady ? 'info' : 'warn'}}" style="margin-top:8rpx">
+      <text>{{cloudReady ? '🟢' : '🟡'}}</text>
+      <text>{{engineHint}}</text>
+    </view>
+
+    <view class="stat-row" style="margin-top:20rpx">
+      <text class="stat-label">本次会话</text>
+      <text class="stat-value">{{usageText}}</text>
+    </view>
+
+    <view class="btn-row" style="margin-top:20rpx">
+      <view class="btn-secondary" bindtap="testConnection">
+        {{testing ? '测试中…' : '测试连接'}}
+      </view>
+      <view class="btn-secondary" bindtap="resetUsage">清零用量</view>
+    </view>
+
+    <view class="test-result" wx:if="{{testResult}}">{{testResult}}</view>
+  </view>
+
+  <!-- ============ 模型选择 ============ -->
+  <view class="card" style="margin-bottom:32rpx">
+    <view class="card-title">
+      模型<text class="card-sub">{{currentModel || '自动选择'}}</text>
+    </view>
+
+    <view class="notice-bar info" style="margin-top:8rpx">
+      <text>💡</text>
+      <text>「自动」由云服务为每个任务匹配模型。也可以手动锁定，识菜这类看图任务建议选支持多模态的模型。</text>
+    </view>
+
+    <view class="btn-row" style="margin-top:20rpx">
+      <view class="btn-secondary" bindtap="loadModels">
+        {{loadingModels ? '加载中…' : (models.length ? '刷新列表' : '加载模型列表')}}
+      </view>
+      <view class="btn-secondary" bindtap="useAuto">用自动</view>
+    </view>
+
+    <view class="model-list" wx:if="{{models.length}}">
+      <view class="model-row {{item.on ? 'on' : ''}} {{item.selectable ? '' : 'off'}}"
+            wx:for="{{models}}" wx:key="id"
+            data-id="{{item.id}}" bindtap="pickModel">
+        <view class="mr-main">
+          <view class="mr-name">{{item.name}}</view>
+          <view class="mr-desc">{{item.description}}</view>
+          <view class="mr-tags">
+            <text class="mr-tag" wx:if="{{item.supportsImages}}">多模态</text>
+            <text class="mr-tag" wx:if="{{item.supportsReasoning}}">推理</text>
+            <text class="mr-tag" wx:if="{{item.credits}}">{{item.credits}}</text>
+            <text class="mr-tag off" wx:if="{{!item.selectable}}">不可用</text>
+          </view>
+        </view>
+        <view class="mr-check" wx:if="{{item.on}}">✓</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ============ 忌口 ============ -->
+  <view class="notice-bar info">
+    <text>💡</text>
+    <text>下面的设置会全局生效——识别结果、点单方案、菜谱推荐都会避开它们。</text>
+  </view>
+
+  <view class="card" style="margin-top:24rpx;margin-bottom:32rpx">
+    <view class="card-title">忌口（不吃）</view>
+    <view class="chip-wrap">
+      <view class="chip {{item.on ? 'on' : ''}}"
+            wx:for="{{avoidChips}}" wx:key="v"
+            data-v="{{item.v}}" bindtap="toggleAvoid">{{item.on ? '✓ ' : ''}}{{item.v}}</view>
+    </view>
+  </view>
+
+  <view class="card" style="margin-bottom:32rpx">
+    <view class="card-title">
+      过敏原（严格过滤）<text class="card-sub">硬约束，不可绕过</text>
+    </view>
+    <view class="chip-wrap">
+      <view class="chip {{item.on ? 'on' : ''}}"
+            wx:for="{{allergenChips}}" wx:key="v"
+            data-v="{{item.v}}" bindtap="toggleAllergen">{{item.on ? '✓ ' : ''}}{{item.v}}</view>
+    </view>
+  </view>
+
+  <view class="btn-primary" bindtap="save">保存</view>
+
+  <view class="pad-bottom"></view>
+</view>

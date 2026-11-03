@@ -1,0 +1,65 @@
+<!-- 菜品卡片（核心组件，置信度三态严格按 PRD §9.4） -->
+<view class="dish-card {{cls}}">
+  <view class="dc-head">
+    <view class="dc-thumb" style="--fdA:{{pal[0]}};--fdB:{{pal[1]}};--fdC:{{pal[2]}};--fdD:{{pal[3]}}">
+      <view class="dish-art"></view>
+    </view>
+
+    <view class="dc-info">
+      <view class="dc-name-row">
+        <text class="dc-name">{{item.name}}</text>
+        <text class="dc-price">¥{{item.price}}</text>
+      </view>
+      <view class="dc-en">{{item.en}} · {{item.category}}</view>
+      <view class="dc-conf">
+        <view class="conf-dots">
+          <view class="d {{i < dotCount ? 'on ' + confCls : ''}}" wx:for="{{dots}}" wx:key="*this"></view>
+        </view>
+        <text class="conf-txt {{confCls}}">{{confLabel}}</text>
+        <text class="conf-src" bindtap="onSource">来源 ▸</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="dc-desc">{{item.desc}}</view>
+
+  <!-- 置信度 0.5–0.8：建议核对 -->
+  <view class="dc-note warn" wx:if="{{item.confidence >= 0.5 && item.confidence < 0.8}}">
+    <text>⚠</text>
+    <text>建议核对：价格或描述可能识别有误</text>
+  </view>
+
+  <!-- 置信度 < 0.5：没认准 -->
+  <block wx:if="{{item.confidence < 0.5}}">
+    <view class="dc-note risk">
+      <text>⚠</text>
+      <text>没认准，可能是「{{candidates[0]}}」</text>
+    </view>
+    <view class="cand-list">
+      <view class="cand-item" wx:for="{{candidates}}" wx:key="*this"
+            data-name="{{item}}" bindtap="onPickCand">{{item}}</view>
+    </view>
+  </block>
+
+  <view class="dc-meta">
+    <block wx:if="{{allergens.length}}">
+      <text class="pill cat" wx:for="{{allergens}}" wx:key="*this">⚠ {{item}}</text>
+    </block>
+    <text class="pill mild" wx:else>无常见过敏原</text>
+  </view>
+
+  <!-- 展开详情 -->
+  <view class="dc-expand" wx:if="{{expanded}}">
+    <view class="dc-row"><text class="k">菜系</text><text class="v">{{detail.cuisine}} · {{detail.region}}</text></view>
+    <view class="dc-row"><text class="k">主要食材</text><text class="v">{{detail.ingredientsText}}</text></view>
+    <view class="dc-row"><text class="k">烹饪方式</text><text class="v">{{detail.methodsText}}</text></view>
+    <view class="dc-row"><text class="k">建议搭配</text><text class="v">{{detail.pairText}}</text></view>
+    <view class="dc-row"><text class="k">参考做法</text><text class="v">{{detail.tips}}</text></view>
+  </view>
+
+  <view class="dc-foot">
+    <text class="recipe-link" data-name="{{dishName}}" bindtap="onRecipe">🥘 这样做 →</text>
+    <text class="fix-btn" bindtap="onToggle">详情</text>
+    <text class="fix-btn" bindtap="onFix">纠错</text>
+  </view>
+</view>

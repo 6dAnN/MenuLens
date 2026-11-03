@@ -1,0 +1,97 @@
+<nav-bar title="拍照识菜" showBack="{{false}}" bind:ask="onAsk" />
+
+<view class="page has-navbar">
+  <!-- 取景 -->
+  <block wx:if="{{!hasResult}}">
+    <view class="cam-view">
+      <view class="cv-food"></view>
+      <view class="cv-frame"></view>
+      <view class="cam-to-menu" bindtap="goMenu">这是菜单 →</view>
+      <view class="cam-tip">把菜品放进框里，尽量拍清</view>
+      <view class="cam-bar">
+        <view class="cam-side" bindtap="pickFromAlbum">🖼</view>
+        <view class="cam-shutter" bindtap="snap"></view>
+        <view class="cam-side" bindtap="onSwitch">🔄</view>
+      </view>
+    </view>
+
+    <view class="tips-card">
+      <view class="tips-title">💡 拍摄小技巧</view>
+      <view class="tips-line">· 光线充足，避免逆光</view>
+      <view class="tips-line">· 45° 斜拍，比正拍更容易认出来</view>
+      <view class="tips-line">· 招牌菜露出全貌，别被餐具挡住</view>
+    </view>
+  </block>
+
+  <!-- 识别进度 -->
+  <block wx:elif="{{recognizing}}">
+    <view class="thinking-card" style="margin-top:60rpx">
+      <view class="tc-head">✦ 正在识别<span class="tc-time">{{recogTime}}</span></view>
+      <view class="tc-step {{item.state}}" wx:for="{{recogSteps}}" wx:key="text">
+        <text class="ts-dot">{{item.state === 'done' ? '✓' : ''}}</text>
+        <text>{{item.text}}</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- 结果 -->
+  <block wx:else>
+    <view class="hero-dish">
+      <view class="hd-img">
+        <view class="dish-art" style="--fdA:#F0B45C;--fdB:#C4622A;--fdC:#6E9B3C;--fdD:#E4B94E"></view>
+      </view>
+      <view class="hd-body">
+        <view class="hd-name-row">
+          <text class="hd-name">{{dish.name}}</text>
+          <text class="pill cat">{{dish.category}}</text>
+        </view>
+        <view class="hd-en">{{dish.en}}</view>
+        <view class="hd-conf">
+          <view class="conf-dots">
+            <view class="d {{index < 5 ? 'on hi' : ''}}" wx:for="{{[1,2,3,4,5]}}" wx:key="*this"></view>
+          </view>
+          <text class="conf-txt hi">{{confLabel}}</text>
+          <text class="conf-src" bindtap="onSource">来源 ▸</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="attr-grid">
+      <view class="attr-cell">
+        <view class="ac-l">菜系 / 产地</view>
+        <view class="ac-v">{{dish.cuisine}} · {{dish.region}}</view>
+      </view>
+      <view class="attr-cell">
+        <view class="ac-l">烹饪方式</view>
+        <view class="ac-v">{{dish.methods[0]}}</view>
+      </view>
+      <view class="attr-cell" style="width:100%">
+        <view class="ac-l">风味特点</view>
+        <view class="ac-v" style="font-weight:400;font-size:27rpx">{{dish.flavorText}}</view>
+      </view>
+    </view>
+
+    <view class="card" style="margin-top:24rpx">
+      <view class="card-title">主要食材</view>
+      <view class="chip-wrap">
+        <text class="chip" wx:for="{{dish.ingredients}}" wx:key="*this">{{item}}</text>
+      </view>
+    </view>
+
+    <view class="notice-bar warn">
+      <text>⚠</text>
+      <text>可能含：{{allergenText}}　·　建议以餐厅实际为准</text>
+    </view>
+
+    <view class="section-title">你可能想问</view>
+    <view class="qa-item" wx:for="{{qaList}}" wx:key="q">
+      <view class="qa-q"><text class="qq-n">Q</text><text>{{item.q}}</text></view>
+      <view class="qa-a">{{item.a}}</view>
+    </view>
+
+    <view class="btn-primary" bindtap="genRecipe">🥘 生成完整菜谱</view>
+    <view style="height:160rpx"></view>
+  </block>
+</view>
+
+<view class="fab" wx:if="{{hasResult}}" bindtap="onAsk">✦</view>

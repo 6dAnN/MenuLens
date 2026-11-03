@@ -1,0 +1,12 @@
+<!-- 自定义导航栏（沉浸式，适配 PRD §9.7） -->
+<view class="navbar {{fg ? 'navbar-fg' : 'navbar-bg'}}" style="padding-top: {{statusBarHeight}}px">
+  <view class="nav-btn" bindtap="onBack" wx:if="{{showBack}}">‹</view>
+  <view class="nav-btn" bindtap="onMenu" wx:elif="{{!fg}}">☰</view>
+  <view class="nav-btn" wx:else></view>
+
+  <view class="nav-title">{{title}}</view>
+
+  <view class="nav-right">
+    <view class="nav-btn" bindtap="onAsk">✦</view>
+  </view>
+</view>

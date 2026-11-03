@@ -1,0 +1,70 @@
+<nav-bar title="我的" showBack="{{false}}" />
+
+<view class="page has-navbar">
+  <view class="mine-head">
+    <view class="mine-avatar">🧑‍🍳</view>
+    <view class="mine-info">
+      <view class="mine-name">美食探索者</view>
+      <view class="mine-sub">已陪你看菜单 {{statCount}} 次</view>
+      <view class="mine-stats">
+        <view class="mine-stat"><view class="ms-v">{{statCount}}</view><view class="ms-l">识别菜单</view></view>
+        <view class="mine-stat"><view class="ms-v">{{favCount}}</view><view class="ms-l">收藏菜品</view></view>
+        <view class="mine-stat"><view class="ms-v">{{histCount}}</view><view class="ms-l">记录</view></view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section-title">饮食设置</view>
+  <view class="set-row" bindtap="goSettings">
+    <text class="sr-i">🚫</text>
+    <view class="sr-t">忌口与过敏原
+      <text class="sr-s">{{avoidText}}</text>
+    </view>
+    <text class="sr-r">{{avoidCount}} 项</text>
+    <text class="sr-arrow">›</text>
+  </view>
+  <view class="set-row" bindtap="onTaste">
+    <text class="sr-i">🎯</text>
+    <view class="sr-t">口味档案<text class="sr-s">清淡 · 少油</text></view>
+    <text class="sr-arrow">›</text>
+  </view>
+
+  <view class="section-title">我的内容</view>
+  <view class="set-row" bindtap="goHistory">
+    <text class="sr-i">🕘</text>
+    <view class="sr-t">历史记录<text class="sr-s">最近 {{histCount}} 次</text></view>
+    <text class="sr-r">{{histCount}}</text>
+    <text class="sr-arrow">›</text>
+  </view>
+  <view class="set-row" bindtap="onFav">
+    <text class="sr-i">⭐</text>
+    <view class="sr-t">收藏的菜品<text class="sr-s">{{favText}}</text></view>
+    <text class="sr-arrow">›</text>
+  </view>
+
+  <view class="section-title">开发者</view>
+  <view class="set-row" bindtap="goApi">
+    <text class="sr-i">🤖</text>
+    <view class="sr-t">AI 引擎与模型<text class="sr-s">{{apiText}}</text></view>
+    <text class="sr-arrow">›</text>
+  </view>
+  <view class="set-row" bindtap="clearData">
+    <text class="sr-i">🗑</text>
+    <view class="sr-t">清除本地数据<text class="sr-s">历史、收藏、忌口</text></view>
+    <text class="sr-arrow">›</text>
+  </view>
+
+  <view class="section-title">关于</view>
+  <view class="set-row" bindtap="onAbout">
+    <text class="sr-i">ℹ️</text>
+    <view class="sr-t">关于 MenuLens</view>
+    <text class="sr-r">v1.0</text>
+  </view>
+
+  <view class="notice-bar info" style="margin-top:40rpx">
+    <text>🔒</text>
+    <text>你的照片与偏好仅用于生成点单方案，30 天后自动删除，不用于模型训练。</text>
+  </view>
+
+  <view class="pad-bottom" style="height:180rpx"></view>
+</view>

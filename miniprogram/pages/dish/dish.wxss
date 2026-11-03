@@ -1,0 +1,118 @@
+.cam-view {
+  height: 700rpx; margin: 0 -40rpx; position: relative;
+  background: linear-gradient(165deg, #2A211B, #3D3026);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.cv-food {
+  width: 380rpx; height: 380rpx; border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 32%, #E8A33D 0%, rgba(232,163,61,.55) 55%, transparent 75%),
+    radial-gradient(circle at 62% 60%, #C8462A 0%, rgba(200,70,42,.6) 50%, transparent 78%),
+    radial-gradient(circle at 40% 65%, #8B5A2B 0%, rgba(139,90,43,.5) 55%, transparent 80%);
+  box-shadow: 0 0 110rpx rgba(232,163,61,.28);
+}
+.cam-frame {
+  position: absolute; width: 440rpx; height: 440rpx;
+  border: 5rpx dashed rgba(255,255,255,.4); border-radius: 44rpx;
+}
+.cam-tip {
+  position: absolute; bottom: 30rpx; left: 0; right: 0;
+  text-align: center; color: rgba(255,255,255,.9); font-size: 26rpx;
+}
+.cam-bar {
+  position: absolute; bottom: 90rpx; left: 0; right: 0;
+  display: flex; align-items: center; justify-content: space-around;
+}
+.cam-shutter {
+  width: 140rpx; height: 140rpx; border-radius: 50%;
+  border: 8rpx solid #fff; background: rgba(255,255,255,.28);
+}
+.cam-shutter:active { transform: scale(.92); }
+.cam-side {
+  width: 92rpx; height: 92rpx; border-radius: 50%;
+  background: rgba(255,255,255,.16); color: #fff; font-size: 38rpx;
+  display: flex; align-items: center; justify-content: center;
+}
+.cam-to-menu {
+  position: absolute; top: 24rpx; right: 32rpx;
+  background: rgba(255,255,255,.18); color: #fff;
+  padding: 14rpx 26rpx; border-radius: 999rpx; font-size: 26rpx;
+}
+
+.tips-card {
+  margin-top: 36rpx; background: var(--bg-brand-soft);
+  border-radius: var(--r-card); padding: 30rpx 32rpx;
+}
+.tips-title { font-size: 28rpx; font-weight: 600; margin-bottom: 12rpx; }
+.tips-line { font-size: 26rpx; color: var(--text-secondary); line-height: 1.75; }
+
+/* 识别进度 */
+.thinking-card {
+  background: var(--bg-surface);
+  border-left: 6rpx solid var(--brand-primary);
+  border-radius: var(--r-card); box-shadow: var(--shadow-sm);
+  padding: 32rpx;
+}
+.tc-head { font-size: 30rpx; font-weight: 600; display: flex; align-items: center; margin-bottom: 20rpx; }
+.tc-time { margin-left: auto; font-size: 24rpx; color: var(--text-tertiary); font-weight: 400; }
+.tc-step { display: flex; align-items: center; gap: 16rpx; font-size: 27rpx; color: var(--text-tertiary); padding: 8rpx 0; }
+.ts-dot { width: 32rpx; text-align: center; font-size: 22rpx; }
+.tc-step.done { color: var(--text-secondary); }
+.tc-step.done .ts-dot { color: var(--success); font-weight: 700; }
+.tc-step.doing { color: var(--brand-primary); font-weight: 500; }
+.tc-step.doing .ts-dot {
+  width: 14rpx; height: 14rpx; border-radius: 50%;
+  background: var(--brand-primary); margin: 0 auto;
+  animation: pulse 1.1s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; transform: scale(.72); } }
+
+/* 结果大卡 */
+.hero-dish {
+  margin: 0 -40rpx 28rpx; background: var(--bg-surface);
+  box-shadow: var(--shadow-sm); padding-bottom: 36rpx;
+}
+.hd-img {
+  height: 400rpx; position: relative;
+  background: linear-gradient(135deg, #FFE3CC, #FFCFA0);
+}
+.hd-name-row { display: flex; align-items: baseline; gap: 18rpx; }
+.hd-name { font-size: 50rpx; font-weight: 700; letter-spacing: -1rpx; }
+.hd-en { font-size: 28rpx; color: var(--text-tertiary); margin-top: 4rpx; }
+.hd-body { padding: 0 40rpx; margin-top: -40rpx; }
+.hd-conf { display: flex; align-items: center; margin-top: 14rpx; }
+
+.attr-grid { display: flex; flex-wrap: wrap; }
+.attr-cell {
+  width: calc(50% - 12rpx); background: var(--bg-elevated);
+  border-radius: 26rpx; padding: 22rpx 26rpx; margin-bottom: 20rpx;
+}
+.attr-cell:nth-child(odd) { margin-right: 24rpx; }
+.ac-l { font-size: 23rpx; color: var(--text-tertiary); }
+.ac-v { font-size: 29rpx; font-weight: 600; margin-top: 6rpx; }
+
+.card-title { font-size: 30rpx; font-weight: 600; margin-bottom: 16rpx; }
+
+.qa-item {
+  background: var(--bg-surface); border-radius: var(--r-card);
+  box-shadow: var(--shadow-sm); padding: 28rpx 30rpx; margin-bottom: 20rpx;
+}
+.qa-q { font-size: 29rpx; font-weight: 600; display: flex; gap: 16rpx; margin-bottom: 12rpx; }
+.qq-n {
+  width: 40rpx; height: 40rpx; border-radius: 50%;
+  background: var(--bg-brand-soft); color: var(--brand-primary);
+  font-size: 22rpx; font-weight: 700; text-align: center; line-height: 40rpx;
+  flex-shrink: 0;
+}
+.qa-a { font-size: 28rpx; color: var(--text-secondary); line-height: 1.65; }
+
+.fab {
+  position: fixed; right: 32rpx; bottom: 160rpx;
+  width: 108rpx; height: 108rpx; border-radius: 50%;
+  background: var(--brand-gradient); color: #fff; font-size: 44rpx;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 16rpx 40rpx rgba(255,107,53,.36);
+  z-index: 80;
+}
+.fab:active { transform: scale(.92); }

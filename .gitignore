@@ -1,0 +1,53 @@
+# ---- 依赖 ----
+node_modules/
+miniprogram/miniprogram_npm/
+.pnpm-store/
+
+# ---- 构建产物 / 打包 ----
+dist/
+build/
+*.tgz
+*.zip
+
+# ---- 本地凭证（绝不能提交）----
+.env
+.env.*
+secrets.json
+# 本地私有配置：真实 endpoint 与 publishableKey 只放这里
+miniprogram/utils/cloud-config.local.js
+
+# ---- 云服务本地标记（含本机绝对路径）----
+*.genie
+
+# ---- WorkBuddy 本地记忆（个人笔记，不入库）----
+.workbuddy/
+
+# ---- 编辑器 / 系统 ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# ---- 日志 ----
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# ---- 缓存 ----
+.cache/
+.temp/
+tmp/
+coverage/
+.nyc_output/
+
+# ---- 测试报告（可重新生成，不入库；截图保留，README 要用）----
+tests/*.txt
+_smoke.txt
+_check.txt
+_difycheck.txt
+# ---- 本地私有配置 ----
+miniprogram/project.private.config.json
+
+# ---- 重复产物（发布包与根目录内容重复，保留本地即可）----
+MenuLens-微信小程序/

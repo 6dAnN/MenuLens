@@ -1,0 +1,27 @@
+<nav-bar title="历史记录" />
+
+<view class="page has-navbar">
+  <block wx:if="{{list.length}}">
+    <view class="section-title">最近记录<text class="st-sub">{{list.length}} 条</text></view>
+    <view class="hist-card" wx:for="{{list}}" wx:key="id"
+          data-idx="{{index}}" bindtap="reopen">
+      <view class="hist-thumb">{{item.icon}}</view>
+      <view class="hist-info">
+        <view class="hist-t">{{item.title}}</view>
+        <view class="hist-s">{{item.sub}}</view>
+        <view class="hist-m">
+          <text>🕐 {{item.time}}</text>
+          <text wx:if="{{item.price}}">💰 ¥{{item.price}}</text>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <view class="empty" wx:else>
+    <view class="ei">🕘</view>
+    <view class="et">还没有记录</view>
+    <view class="es">扫一份菜单，这里就会留下你的点单记录</view>
+  </view>
+
+  <view class="pad-bottom"></view>
+</view>

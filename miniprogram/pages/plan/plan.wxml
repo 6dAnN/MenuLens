@@ -1,0 +1,81 @@
+<nav-bar title="你的点单方案" bind:ask="onAsk" />
+
+<view class="page has-navbar">
+  <!-- 预算条 -->
+  <view class="budget-bar {{over ? 'over' : ''}}">
+    <view class="bb-top">
+      <text class="bb-total">¥{{plan.total}}</text>
+      <text class="bb-per">人均 ¥{{perHeadText}}</text>
+    </view>
+    <view class="bb-track"><view class="bb-fill" style="width: {{pct}}%"></view></view>
+    <view class="bb-sub">
+      <text>预算 ¥{{ctx.budget}}</text>
+      <text class="bb-right">建议 {{servingsText}} 人份 · {{plan.dishCount}} 道菜</text>
+    </view>
+    <view class="bb-sub" wx:if="{{plan.adjusted}}">
+      <text class="bb-adjust">⚙ {{plan.adjusted}}</text>
+    </view>
+  </view>
+
+  <!-- 冲突警告（不折叠） -->
+  <view class="notice-bar warn" wx:for="{{plan.warnings}}" wx:key="*this">
+    <text>⚠</text><text>{{item}}</text>
+  </view>
+
+  <!-- 分组菜品 -->
+  <block wx:for="{{groups}}" wx:key="cat">
+    <view class="pg-title">{{item.cat}}<text class="pg-count">{{item.items.length}} 道</text></view>
+
+    <view class="plan-card" wx:for="{{item.items}}" wx:for-item="dish" wx:key="key">
+      <view class="pc-head">
+        <text class="pc-name">{{dish.name}}</text>
+        <text class="pc-role">{{dish.role}}</text>
+        <text class="pc-price">¥{{dish.price}}</text>
+      </view>
+      <view class="pc-desc">{{dish.desc}}</view>
+      <view class="pc-reason"><text class="pr-icon">💡</text><text>{{dish.reason}}</text></view>
+      <view class="pc-swap" data-key="{{dish.key}}" bindtap="openSwap">换一道 →</view>
+    </view>
+  </block>
+
+  <view class="cta-row">
+    <view class="btn-secondary" bindtap="recipeAll">🥘 都要菜谱</view>
+    <view class="btn-secondary" bindtap="onShare">📤 分享卡片</view>
+  </view>
+
+  <view style="height:220rpx"></view>
+</view>
+
+<view class="sticky-cta">
+  <view class="sc-info"><text>不满意？说说看，我重新配</text></view>
+  <view class="sc-ctx">
+    <text class="xtag">👥 {{ctx.servings}} 人</text>
+    <text class="xtag">💰 ¥{{ctx.budget}}</text>
+    <text class="xtag">🌶 {{spiceText}}</text>
+    <text class="xtag on" wx:if="{{ctx.avoid.length}}">🚫 {{avoidText}}</text>
+    <text class="xtag link" bindtap="openConstraint">调整 ›</text>
+  </view>
+  <view class="btn-primary" bindtap="openChat">✦ 不够吃？告诉我 →</view>
+</view>
+
+<!-- 换菜面板 -->
+<view class="mask" wx:if="{{showSwap}}" bindtap="closeSwap"></view>
+<view class="sheet" wx:if="{{showSwap}}">
+  <view class="sh-handle"></view>
+  <view class="sh-head"><text class="sh-title">换一道菜</text></view>
+  <scroll-view scroll-y class="sh-body">
+    <view class="notice-bar info">
+      <text>💡</text><text>预算上限 ¥{{ctx.budget}}，已避开你的忌口</text>
+    </view>
+    <view class="pick-item" wx:for="{{swapPool}}" wx:key="key"
+          data-key="{{item.key}}" bindtap="doSwap">
+      <text class="pi-n">{{item.name}}</text>
+      <text class="pi-d">{{item.desc}}</text>
+      <text class="pi-p">¥{{item.price}}</text>
+    </view>
+    <view class="empty-mini" wx:if="{{!swapPool.length}}">
+      其他菜都已经在方案里了
+    </view>
+    <view style="height:40rpx"></view>
+  </scroll-view>
+</view>

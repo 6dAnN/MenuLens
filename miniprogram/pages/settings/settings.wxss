@@ -1,0 +1,68 @@
+.card-title {
+  font-size: 30rpx; font-weight: 600; margin-bottom: 20rpx;
+  display: flex; align-items: center;
+}
+.card-sub { font-size: 24rpx; color: var(--text-tertiary); font-weight: 400; margin-left: 16rpx; }
+.chip-wrap { display: flex; flex-wrap: wrap; }
+
+/* --- 引擎状态 --- */
+.stat-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18rpx 0;
+}
+.stat-label { font-size: 26rpx; color: var(--text-secondary); }
+.stat-value { font-size: 26rpx; color: var(--text-primary); font-weight: 500; }
+
+.btn-row { display: flex; }
+.btn-row .btn-secondary { flex: 1; }
+.btn-row .btn-secondary + .btn-secondary { margin-left: 16rpx; }
+
+.test-result {
+  margin-top: 20rpx;
+  padding: 20rpx 24rpx;
+  background: var(--bg-elevated);
+  border-radius: var(--r-input);
+  font-size: 25rpx;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* --- 模型列表 --- */
+.model-list { margin-top: 20rpx; }
+.model-row {
+  display: flex; align-items: center;
+  padding: 22rpx 20rpx;
+  border-radius: var(--r-input);
+  background: var(--bg-elevated);
+  margin-bottom: 12rpx;
+  border: 2rpx solid transparent;
+}
+.model-row.on { border-color: var(--brand); background: var(--bg-brand-soft); }
+.model-row.off { opacity: 0.45; }
+
+.mr-main { flex: 1; min-width: 0; }
+.mr-name {
+  font-size: 27rpx; font-weight: 600; color: var(--text-primary);
+  display: flex; align-items: center;
+}
+.mr-desc {
+  font-size: 23rpx; color: var(--text-tertiary);
+  margin-top: 4rpx;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mr-tags { display: flex; flex-wrap: wrap; margin-top: 10rpx; }
+.mr-tag {
+  font-size: 20rpx;
+  color: var(--brand);
+  background: var(--bg-brand-soft);
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  margin-right: 8rpx;
+}
+.mr-tag.off { color: var(--text-tertiary); background: var(--bg-elevated); }
+
+.mr-check {
+  font-size: 32rpx; color: var(--brand);
+  font-weight: 700;
+  margin-left: 16rpx;
+}

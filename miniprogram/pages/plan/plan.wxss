@@ -1,0 +1,106 @@
+/* 预算条 */
+.budget-bar {
+  background: var(--bg-surface); border-radius: var(--r-card);
+  box-shadow: var(--shadow-sm); padding: 34rpx 36rpx; margin-top: 16rpx;
+}
+.bb-top { display: flex; align-items: baseline; }
+.bb-total { font-size: 64rpx; font-weight: 700; letter-spacing: -2rpx; }
+.bb-per { font-size: 28rpx; color: var(--text-secondary); margin-left: 18rpx; }
+.bb-track {
+  height: 16rpx; background: var(--divider); border-radius: 8rpx;
+  margin: 24rpx 0 16rpx; overflow: hidden;
+}
+.bb-fill { height: 100%; border-radius: 8rpx; background: var(--brand-gradient); }
+.budget-bar.over .bb-fill { background: var(--danger); }
+.bb-sub { font-size: 26rpx; color: var(--text-tertiary); display: flex; margin-top: 6rpx; }
+.bb-right { margin-left: auto; }
+.bb-adjust { color: var(--brand-primary); font-weight: 600; }
+
+/* 分组标题 */
+.pg-title {
+  font-size: 28rpx; font-weight: 600; color: var(--text-secondary);
+  margin: 36rpx 0 18rpx; display: flex; align-items: center;
+}
+.pg-title::after { content: ''; flex: 1; height: 1rpx; background: var(--divider); margin-left: 16rpx; }
+.pg-count { font-size: 24rpx; color: var(--text-tertiary); font-weight: 400; margin-left: 12rpx; }
+
+/* 方案卡 */
+.plan-card {
+  background: var(--bg-surface); border-radius: var(--r-card);
+  box-shadow: var(--shadow-sm); padding: 30rpx; margin-bottom: 22rpx;
+}
+.pc-head { display: flex; align-items: center; gap: 16rpx; }
+.pc-name { font-size: 32rpx; font-weight: 600; flex: 1; }
+.pc-role {
+  font-size: 22rpx; font-weight: 600; color: var(--brand-primary);
+  background: var(--bg-brand-soft); padding: 4rpx 16rpx; border-radius: 12rpx;
+}
+.pc-price { font-size: 32rpx; font-weight: 600; }
+.pc-desc { font-size: 27rpx; color: var(--text-secondary); margin-top: 10rpx; }
+.pc-reason {
+  margin-top: 20rpx; background: var(--bg-brand-soft); border-radius: 24rpx;
+  padding: 20rpx 24rpx; font-size: 26rpx; color: #8A4A20; line-height: 1.55;
+  display: flex; gap: 14rpx;
+}
+.pr-icon { flex-shrink: 0; }
+.pc-swap {
+  margin-top: 20rpx; text-align: right;
+  font-size: 26rpx; color: var(--brand-primary); font-weight: 600;
+}
+
+.cta-row { display: flex; margin-top: 40rpx; }
+.cta-row .btn-secondary { flex: 1; margin-right: 20rpx; }
+.cta-row .btn-secondary:last-child { margin-right: 0; }
+
+/* 吸底 */
+.sticky-cta {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,.97);
+  border-top: 1rpx solid var(--divider);
+  padding: 24rpx 40rpx calc(24rpx + env(safe-area-inset-bottom));
+  z-index: 80;
+}
+.sc-info {
+  display: flex; font-size: 26rpx;
+  color: var(--text-secondary); margin-bottom: 18rpx;
+}
+.sc-ctx { display: flex; flex-wrap: wrap; margin-bottom: 18rpx; }
+.xtag {
+  background: var(--bg-elevated); color: var(--text-secondary);
+  padding: 8rpx 20rpx; border-radius: var(--r-pill);
+  font-size: 24rpx; margin-right: 12rpx; margin-bottom: 8rpx;
+}
+.xtag.on { background: var(--bg-brand-soft); color: var(--brand-primary); font-weight: 600; }
+.xtag.link { color: var(--brand-primary); font-weight: 600; }
+
+/* 换菜面板 */
+.mask { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 90; }
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  max-height: 85vh; background: var(--bg-primary);
+  border-radius: 48rpx 48rpx 0 0;
+  box-shadow: var(--shadow-lg); z-index: 95;
+  display: flex; flex-direction: column;
+  animation: slideUp .3s cubic-bezier(.2,.9,.3,1);
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: none; } }
+.sh-handle {
+  width: 76rpx; height: 8rpx; border-radius: 4rpx;
+  background: var(--divider); margin: 20rpx auto 8rpx;
+}
+.sh-head { padding: 16rpx 40rpx 24rpx; display: flex; align-items: center; }
+.sh-title { font-size: 34rpx; font-weight: 700; }
+.sh-body { flex: 1; padding: 0 40rpx 40rpx; max-height: 66vh; }
+
+.pick-item {
+  background: var(--bg-surface); border-radius: 28rpx;
+  box-shadow: var(--shadow-sm); padding: 24rpx 26rpx;
+  margin-bottom: 18rpx; display: flex; align-items: center; gap: 18rpx;
+}
+.pi-n { font-size: 30rpx; font-weight: 600; }
+.pi-d { font-size: 24rpx; color: var(--text-secondary); flex: 1; }
+.pi-p { font-size: 30rpx; font-weight: 600; }
+.empty-mini {
+  text-align: center; color: var(--text-tertiary);
+  font-size: 28rpx; padding: 60rpx 0;
+}
