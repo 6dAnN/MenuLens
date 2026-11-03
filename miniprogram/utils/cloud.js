@@ -20,34 +20,19 @@ const store = require('./store.js');
 /**
  * 云服务公开配置 —— 由开通云服务时返回的 publicConfig 原样落地。
  *
- * ⚠ 关于公开仓库：
- *   publishableKey 本身不带权限（服务端校验请求来源），但它同时是你这个
- *   云服务应用的身份证——公开后别人可以拿去用你的额度。
- *   所以仓库里只保留示例值，真实值放在本地的 cloud-config.local.js
- *   （已被 .gitignore 忽略）。本地文件不存在时退回示例值，
- *   此时云端调用会因鉴权失败而自动降级到本地引擎，功能不受影响。
+ * 配置放在 utils/cloud-config.js。该文件会入库，但仓库里保存的是占位值；
+ * 本机跑通云端时把真实值填进去，再用 skip-worktree 保护它不被提交：
  *
- *   想在别人机器上跑通云端：复制 utils/cloud-config.example.js
- *   为 utils/cloud-config.local.js，填上自己的 endpoint 与 publishableKey。
+ *   git update-index --skip-worktree miniprogram/utils/cloud-config.js
+ *
+ * 详见 cloud-config.js 顶部的说明。
  */
-let PUBLIC_CONFIG = {
-  endpoint: 'https://YOUR-ENDPOINT.app.workbuddy.host',
-  publishableKey: 'YOUR_PUBLISHABLE_KEY'
-};
+const CONFIG = require('./cloud-config.js');
 
-// 优先读取本地私有配置（不入库）。用 try/catch 兜住「文件不存在」。
-try {
-  // eslint-disable-next-line
-  const local = require('./cloud-config.local.js');
-  if (local && local.endpoint && local.publishableKey) {
-    PUBLIC_CONFIG = {
-      endpoint: local.endpoint,
-      publishableKey: local.publishableKey
-    };
-  }
-} catch (e) {
-  // 没有本地配置，用仓库里的示例值，调用会在服务端鉴权阶段失败并降级
-}
+const PUBLIC_CONFIG = {
+  endpoint: (CONFIG && CONFIG.endpoint) || 'https://YOUR-ENDPOINT.app.workbuddy.host',
+  publishableKey: (CONFIG && CONFIG.publishableKey) || 'YOUR_PUBLISHABLE_KEY'
+};
 
 let _cloud = null;
 let _initErr = null;
