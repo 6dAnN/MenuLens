@@ -188,19 +188,20 @@ function makeWx() {
 global.wx = makeWx();
 
 /**
- * 凭证从本地的 cloud-config.local.js 读，仓库里不含真实值。
- * 本地文件不存在时用占位值——契约验证只检查请求形状，不校验真实鉴权。
+ * 凭证从 utils/cloud-config.js 读，仓库里保存的是占位值。
+ * 本机若用 skip-worktree 填了真实凭证，这里会读到真实值；
+ * 契约验证只检查请求形状，不校验真实鉴权，占位值同样能跑完全流程。
  */
-const LOCAL_CFG = path.join(MP, 'utils', 'cloud-config.local.js');
+const CFG_FILE = path.join(MP, 'utils', 'cloud-config.js');
 let CFG = { endpoint: 'https://placeholder.workbuddy.host', publishableKey: 'placeholder_key' };
-if (fs.existsSync(LOCAL_CFG)) {
+if (fs.existsSync(CFG_FILE)) {
   try {
-    CFG = require(LOCAL_CFG);
+    CFG = require(CFG_FILE);
   } catch (e) {
-    out.push('  WARN  local config unreadable: ' + e.message);
+    out.push('  WARN  config unreadable: ' + e.message);
   }
 } else {
-  out.push('  NOTE  utils/cloud-config.local.js not found, using placeholder values');
+  out.push('  WARN  utils/cloud-config.js missing, using placeholder values');
 }
 
 let cloud;

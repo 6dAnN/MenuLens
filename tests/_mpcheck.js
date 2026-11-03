@@ -10,6 +10,36 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const cp = require('child_process');
+
+// ---------- 定位 git 可执行文件 ----------
+// 不能直接用 execSync('git ...')：Windows 上会经过 cmd.exe，
+// 中文路径会被 GBK 编码搞坏，报 "Command failed"；execFileSync 又要求
+// git 在 PATH 里，而很多机器上 git 只装了但没进 Node 的 PATH。
+// 所以这里显式探测常见安装位置。
+function findGit() {
+  const env = process.env.GIT_PATH;
+  if (env && fs.existsSync(env)) return env;
+  const cands = [
+    'C:\\Program Files\\Git\\cmd\\git.exe',
+    'C:\\Program Files\\Git\\bin\\git.exe',
+    'C:\\Program Files (x86)\\Git\\cmd\\git.exe',
+    path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Git', 'cmd', 'git.exe')
+  ].filter(Boolean);
+  for (const c of cands) if (fs.existsSync(c)) return c;
+  return null;   // 交由 PATH 兜底
+}
+const GIT = findGit();
+
+function gitOut(args, cwd) {
+  try {
+    const opts = { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] };
+    if (GIT) return cp.execFileSync(GIT, args, opts);
+    return cp.execSync('git ' + args.join(' '), opts);
+  } catch (e) {
+    return null;
+  }
+}
 
 const ROOT = path.resolve(__dirname, '..', 'miniprogram');
 const out = [];
@@ -183,44 +213,52 @@ hasEndpoint ? ok('create* 调用传了 publicConfig.endpoint') : err('create* �
 hasKey ? ok('create* 调用传了 publicConfig.publishableKey') : err('create* 调用缺 publishableKey');
 
 // 不允许出现别的 workbuddy 域名（endpoint 只能来自 publicConfig）
-// 9.1 endpoint 不得硬编码成某个具体域名
-//     规则升级：cloud.js 里不允许出现任何真实域名——凭证与域名统一放
-//     utils/cloud-config.local.js（不入库），仓库里只留占位值。
-//     判定：cloud.js / cloud-config.example.js 里出现的 workbuddy 域名，
-//     必须全部是占位形式（含 YOUR- / placeholder 之类），且不得出现 wbpk_ 开头的 key。
+// 9.1 仓库【已提交版本】里不得出现真实云服务域名 / 真实 publishableKey
+//     机制：凭证统一放 utils/cloud-config.js，工作区（= 本机）里填真实值，
+//     已提交版本保存占位值；本机用 skip-worktree 保护改动不被提交。
+//
+//     所以判定对象是「git 仓库里存的内容」，不是当前磁盘状态——
+//     后者本来就该是真实凭证才能跑通云端。
 const domainHits = [];
 const keyHits = [];
-// cloud-config.local.js 是本地私有配置（.gitignore 已忽略），里面放真实凭证是对的。
-// 但必须确认它真的被 gitignore 拦住了，否则会漏进仓库。
-const LOCAL_CFG = path.join(ROOT, 'utils', 'cloud-config.local.js');
-if (fs.existsSync(LOCAL_CFG)) {
-  const gi = fs.readFileSync(path.join(ROOT, '..', '.gitignore'), 'utf8');
-  /cloud-config\.local\.js/.test(gi)
-    ? ok('cloud-config.local.js 已被 .gitignore 忽略（本地真实凭证不会入库）')
-    : err('cloud-config.local.js 未被 .gitignore 忽略，真实凭证会进仓库');
-}
-for (const f of jsFiles.concat(['cloud-config.example.js'])) {
-  if (f.indexOf('wb-sdk.js') >= 0) continue;
-  if (f.indexOf('cloud-config.local.js') >= 0) continue;   // 本地私有文件，跳过内容检查
-  const abs = path.isAbsolute(f) ? f : path.join(ROOT, 'utils', f);
-  if (!fs.existsSync(abs)) continue;
-  const src = fs.readFileSync(abs, 'utf8');
-  for (const u of (src.match(/https?:\/\/[a-z0-9.-]+/gi) || [])) {
-    if (!/workbuddy/i.test(u)) continue;
-    // 占位域名允许：形如 xxx-YOUR-xxx / placeholder
-    if (!/your|placeholder|example/i.test(u)) domainHits.push(path.basename(abs) + ': ' + u);
-  }
-  for (const k of (src.match(/wbpk_[A-Za-z0-9_]{16,}/g) || [])) {
-    keyHits.push(path.basename(abs) + ': ' + k.slice(0, 12) + '…');
-  }
-}
-domainHits.length === 0
-  ? ok('未硬编码任何真实云服务域名（仓库内只有占位值）')
-  : err('出现疑似硬编码的真实域名: ' + [...new Set(domainHits)].join(', '));
 
-keyHits.length === 0
-  ? ok('仓库内不含真实 publishableKey')
-  : err('出现疑似真实 publishableKey: ' + [...new Set(keyHits)].join(', '));
+function scanCommitted(relPath) {
+  const committed = gitOut(['show', 'HEAD:' + relPath], path.join(ROOT, '..'));
+  if (committed === null) return null;   // 该文件尚未提交，跳过
+  // 去掉注释，只看代码
+  const code = committed.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+  for (const u of (code.match(/https?:\/\/[a-z0-9.-]+/gi) || [])) {
+    if (!/workbuddy/i.test(u)) continue;
+    if (!/your|placeholder|example/i.test(u)) domainHits.push(relPath + ': ' + u);
+  }
+  for (const k of (code.match(/wbpk_[A-Za-z0-9_]{16,}/g) || [])) {
+    keyHits.push(relPath + ': ' + k.slice(0, 12) + '…');
+  }
+  return committed;
+}
+
+// 所有入库的 js 都查一遍
+let checked = 0;
+const lsOut = gitOut(['ls-files', '*.js'], path.join(ROOT, '..'));
+const jsList = lsOut
+  ? lsOut.split('\n').map(s => s.trim()).filter(Boolean)
+  : [];
+for (const rel of jsList) {
+  if (rel.indexOf('wb-sdk.js') >= 0) continue;   // SDK 官方产物跳过
+  if (scanCommitted(rel) !== null) checked++;
+}
+
+if (!GIT && !lsOut) {
+  out.push('  [SKIP]  未找到 git，跳过版本历史检查');
+} else {
+  domainHits.length === 0
+    ? ok('已提交版本里没有真实云服务域名（' + checked + ' 个 js 全为占位值）')
+    : err('已提交版本含疑似真实域名: ' + [...new Set(domainHits)].join(', '));
+
+  keyHits.length === 0
+    ? ok('已提交版本里没有真实 publishableKey')
+    : err('已提交版本含疑似真实 publishableKey: ' + [...new Set(keyHits)].join(', '));
+}
 
 // 9.2 前端不得出现服务端密钥
 const secretish = [];
