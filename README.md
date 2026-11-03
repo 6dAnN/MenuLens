@@ -61,8 +61,7 @@ AI小程序/
         ├── cloud.js            云服务封装（单例/流式/降级/用量）
         ├── ai-cloud.js         云服务版五项 AI 能力
         ├── api.js              旧 Dify 实现（保留可对比）
-        ├── cloud-config.example.js  云服务配置模板（占位值，入库）
-        ├── cloud-config.local.js     真实凭证（本地，.gitignore 已忽略）
+        ├── cloud-config.js     云服务凭证（仓库存占位值，本机填真值+skip-worktree）
         ├── wb-sdk.js           官方 SDK 小程序产物（内置，166KB）
         ├── dishes.js           菜品本体（知识库）
         ├── planner.js          点单引擎 + 过敏原硬过滤（纯函数）
@@ -90,6 +89,11 @@ AI小程序/
 
 > **不需要执行「构建 npm」。** 云服务 SDK 的小程序产物已内置为 `utils/wb-sdk.js`，
 > 导入即可跑通真实模型调用。
+>
+> **想让云端真模型生效**：编辑 `miniprogram/utils/cloud-config.js`，填上你自己的
+> `endpoint` 与 `publishableKey`（开通云服务时拿到的 publicConfig）。
+> 不填也能编译运行——会自动降级到本地引擎，功能完整可用。
+> 详见下方「AI 能力说明」。
 >
 > 想升级 SDK 时才需要：
 > ```bash
@@ -128,16 +132,27 @@ AI小程序.docx   原始提案
 **不需要填任何 Key。** 凭证就是开通云服务时返回的 `endpoint` + `publishableKey`。
 
 > 🔒 **仓库里不含真实凭证。**
-> `utils/cloud-config.local.js` 存放真实的 endpoint 与 publishableKey，已被 `.gitignore` 忽略；
-> 仓库只保留 `utils/cloud-config.example.js`（占位值）。
-> 想跑通云端模型，复制一份填上自己的值：
+>
+> 凭证放在 `miniprogram/utils/cloud-config.js`。这个文件**会提交到仓库**，
+> 但仓库版本保存的是**占位值**；你本机填上真实值后，用 git 的 skip-worktree
+> 保护它，改动不会进版本历史：
 >
 > ```bash
-> cp miniprogram/utils/cloud-config.example.js miniprogram/utils/cloud-config.local.js
-> # 然后编辑 cloud-config.local.js，填入你的 endpoint 与 publishableKey
+> # 1) 编辑 miniprogram/utils/cloud-config.js，填上你的 endpoint 与 publishableKey
+> # 2) 保护它，之后 git status 不会再显示它的改动
+> git update-index --skip-worktree miniprogram/utils/cloud-config.js
 > ```
 >
-> 没填也能跑——云端鉴权失败会自动降级到本地确定性引擎，功能不受影响。
+> 想取消保护、恢复与仓库同步：
+> ```bash
+> git update-index --no-skip-worktree miniprogram/utils/cloud-config.js
+> ```
+>
+> **为什么不用 `.gitignore` 排除它**：微信小程序在**编译期**就解析 `require`
+> 的目标文件，文件缺失会直接编译报错。靠 gitignore 排除会让人克隆后编译不过。
+>
+> 没填凭证也能跑——云端鉴权失败会自动降级到本地确定性引擎，功能不受影响，
+> 首页状态条显示黄点，「AI 引擎与模型」页会提示尚未配置凭证。
 
 想看当前状态：首页底部有引擎状态条，绿点＝云端在跑，黄点＝已降级到本地。
 也可以去 **「我的 → AI 引擎与模型」** 看模型目录、切换模型、测连通性。
