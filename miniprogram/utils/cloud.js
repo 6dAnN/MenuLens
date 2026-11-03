@@ -102,11 +102,25 @@ function available() {
   return !!getCloud();
 }
 
-/** 未加载到 SDK 时的可读提示 */
+/**
+ * 凭证是否还是仓库里的占位值。
+ * 占位值会被 SDK 的格式校验拦下（publishableKey 必须以 wbpk_ 开头），
+ * 这时不是 SDK 有问题，而是用户还没填自己的凭证——提示语要说清楚。
+ */
+function isPlaceholderConfig() {
+  return /^YOUR[-_]/i.test(String(PUBLIC_CONFIG.publishableKey || '')) ||
+         /^YOUR[-_]/i.test(String(PUBLIC_CONFIG.endpoint || ''));
+}
+
+/** 不可用时的可读提示 */
 function notBuiltHint() {
   if (!_initErr) return null;
-  return '云服务 SDK 不可用：' + ((_initErr && _initErr.message) || '未知原因') +
-    '。当前使用本地引擎，功能仍完整可用。';
+  const reason = (_initErr && _initErr.message) || '未知原因';
+  if (isPlaceholderConfig()) {
+    return '尚未配置云服务凭证：请在 miniprogram/utils/cloud-config.js 里填入你自己的 ' +
+      'endpoint 与 publishableKey。当前使用本地引擎，功能完整可用。';
+  }
+  return '云服务 SDK 不可用：' + reason + '。当前使用本地引擎，功能仍完整可用。';
 }
 
 /**
@@ -256,6 +270,7 @@ module.exports = {
   PUBLIC_CONFIG,
   getCloud,
   available,
+  isPlaceholderConfig,
   notBuiltHint,
   listModels,
   resolveModel,

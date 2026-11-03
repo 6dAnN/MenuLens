@@ -191,9 +191,14 @@ global.wx = makeWx();
  * 凭证从 utils/cloud-config.js 读，仓库里保存的是占位值。
  * 本机若用 skip-worktree 填了真实凭证，这里会读到真实值；
  * 契约验证只检查请求形状，不校验真实鉴权，占位值同样能跑完全流程。
+ *
+ * ⚠ SDK 在构造时就会校验 publishableKey 必须以 "wbpk_" 开头，
+ *   占位值过不了这一关会直接抛错。所以本地若是占位值，
+ *   换成一个【格式合法但显然无效】的测试用假 key——只验证请求形状，
+ *   不触发任何真实计费。
  */
 const CFG_FILE = path.join(MP, 'utils', 'cloud-config.js');
-let CFG = { endpoint: 'https://placeholder.workbuddy.host', publishableKey: 'placeholder_key' };
+let CFG = { endpoint: 'https://placeholder.app.workbuddy.host', publishableKey: 'placeholder_key' };
 if (fs.existsSync(CFG_FILE)) {
   try {
     CFG = require(CFG_FILE);
@@ -202,6 +207,13 @@ if (fs.existsSync(CFG_FILE)) {
   }
 } else {
   out.push('  WARN  utils/cloud-config.js missing, using placeholder values');
+}
+if (!/^wbpk_/.test(String(CFG.publishableKey || ''))) {
+  out.push('  NOTE  配置里是占位值，改用格式合法的测试假 key（只验证请求形状）');
+  CFG = {
+    endpoint: CFG.endpoint,
+    publishableKey: 'wbpk_TESTONLY0000000000000000000000000000000000000'
+  };
 }
 
 let cloud;
