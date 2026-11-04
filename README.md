@@ -37,7 +37,7 @@ AI小程序/
 │   ├── *.txt                   各自的测试报告
 │   └── _shots/                 21 张界面截图
 │
-├── MenuLens-微信小程序.zip      一键导入包（miniprogram + docs + README）
+├── MenuLens-微信小程序.zip      本地打包产物（.gitignore 已排除，不在仓库里）
 │
 └── miniprogram/                微信小程序原生工程
     ├── app.js / app.json / app.wxss
@@ -66,6 +66,41 @@ AI小程序/
         ├── dishes.js           菜品本体（知识库）
         ├── planner.js          点单引擎 + 过敏原硬过滤（纯函数）
         └── store.js            本地存储
+```
+
+---
+
+## 🧰 环境要求与依赖安装
+
+**H5 演示版：零依赖。** 只要一个现代浏览器（Chrome / Edge / Firefox），双击 `demo/index.html` 即可，不需要 Node、不需要装包、不需要联网。
+
+**微信小程序：** 只需要 [微信开发者工具](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html)。云服务 SDK 的小程序产物已内置为 `utils/wb-sdk.js`，**导入即跑，不需要执行「构建 npm」**。
+
+**跑自动化测试（可选）：** 需要 Node.js ≥ 18。
+
+```bash
+# 1) 检查 Node 版本
+node -v          # 需 >= 18
+
+# 2) tests/ 下的脚本是零依赖的，直接运行即可
+node tests/_unittest.js
+node tests/_mpcheck.js
+node tests/_cloudcheck.js
+
+# 3) 只有 H5 冒烟测试需要额外依赖（CDP 驱动真实 Chrome）
+npm install ws
+node tests/_smoke.js
+```
+
+> 冒烟测试默认找 `C:\Program Files\Google\Chrome\Application\chrome.exe`，
+> 装在别处时用环境变量指定：`set CHROME_PATH=D:\...\chrome.exe`（Windows）/ `export CHROME_PATH=...`（macOS/Linux）。
+
+**可选：升级云服务 SDK**（仅当你需要换 SDK 版本时）
+
+```bash
+cd miniprogram
+npm install @tencent-ai/workbuddy-cloud-sdk@dev
+cp node_modules/@tencent-ai/workbuddy-cloud-sdk/miniprogram_dist/miniprogram.js utils/wb-sdk.js
 ```
 
 ---
@@ -102,18 +137,21 @@ AI小程序/
 > cp node_modules/@tencent-ai/workbuddy-cloud-sdk/miniprogram_dist/miniprogram.js utils/wb-sdk.js
 > ```
 
-### 3. 一键导入包
+### 3. 打包成可分发的一键导入包（可选）
 
-`MenuLens-微信小程序.zip` 已打包好（187 KB）：
+想让别人拿到一个 zip 就能导入，本地打包即可（**这个 zip 已被 `.gitignore` 排除，不在仓库里**）：
 
-```
-miniprogram/    微信小程序工程（不含 node_modules，SDK 已内置）
-docs/           PRD / UI-UX 规范 / 云服务接入指南 / Dify 指南
-README.md
-AI小程序.docx   原始提案
+```powershell
+# Windows PowerShell
+Compress-Archive -Path miniprogram,docs,README.md -DestinationPath MenuLens-微信小程序.zip -Force
 ```
 
-解压后用微信开发者工具导入 `miniprogram/` 即可。
+```bash
+# macOS / Linux
+zip -r MenuLens-微信小程序.zip miniprogram docs README.md
+```
+
+解压后用微信开发者工具导入内层的 `miniprogram/` 目录。
 
 ---
 
