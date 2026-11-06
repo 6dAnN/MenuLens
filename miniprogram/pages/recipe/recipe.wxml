@@ -118,3 +118,6 @@
 
   <view style="height:120rpx"></view>
 </view>
+
+<!-- 悬浮 AI 小助手头像 -->
+<ai-fab visible="{{true}}" />

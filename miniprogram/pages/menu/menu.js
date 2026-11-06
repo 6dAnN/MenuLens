@@ -282,6 +282,6 @@ Page({
     });
   },
   onAsk() {
-    wx.showToast({ title: 'AI 助手', icon: 'none' });
+    wx.navigateTo({ url: '/pages/assistant/assistant' });
   }
 });

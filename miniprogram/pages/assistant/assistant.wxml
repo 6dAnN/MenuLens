@@ -1,0 +1,83 @@
+<!-- AI 小助手聊天页 -->
+<view class="chat-page">
+  <!-- 顶栏 -->
+  <view class="chat-nav" style="padding-top: {{statusBarHeight}}px">
+    <view class="cn-back" bindtap="onBack">‹</view>
+    <view class="cn-title">
+      <text class="cn-name">AI 小助手</text>
+      <text class="cn-status {{remoteLive ? 'live' : ''}}">
+        {{remoteLive ? '● 云端模型在线' : '● 本地引擎'}}
+      </text>
+    </view>
+    <view class="cn-clear" bindtap="clearAll">清空</view>
+  </view>
+
+  <!-- 消息区 -->
+  <scroll-view class="chat-body" scroll-y scroll-into-view="{{scrollInto}}" scroll-with-animation>
+    <view
+      class="msg {{item.role === 'user' ? 'msg-user' : 'msg-ai'}}"
+      wx:for="{{messages}}"
+      wx:key="index"
+      id="msg-{{index}}"
+    >
+      <view class="msg-avatar" wx:if="{{item.role === 'assistant'}}">✦</view>
+      <view class="msg-wrap">
+        <view class="msg-bubble {{item.failed ? 'failed' : ''}}">
+          <text class="msg-text" user-select>{{item.text}}</text>
+          <!-- 首字还没回来时给一个真实的状态说明，不是空转菊花 -->
+          <text class="msg-cursor" wx:if="{{item.pending && sending}}">正在检索知识库…</text>
+        </view>
+
+        <!-- 检索依据：让用户能核查 AI 引用了什么 -->
+        <view
+          class="msg-src"
+          wx:if="{{item.role === 'assistant' && item.hits.length > 0}}"
+          bindtap="toggleHits"
+          data-i="{{index}}"
+        >
+          <text class="src-toggle">
+            {{expanded === index ? '▾' : '▸'}} 依据 {{item.hits.length}} 条
+          </text>
+          <view class="src-list" wx:if="{{expanded === index}}">
+            <view class="src-item" wx:for="{{item.hits}}" wx:for-item="h" wx:key="title">
+              <text class="src-title">{{h.title}}</text>
+              <text class="src-meta">{{h.source}} · 匹配度 {{h.score}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="msg-avatar user" wx:if="{{item.role === 'user'}}">我</view>
+    </view>
+    <view style="height:40rpx"></view>
+    <view id="msg-end"></view>
+  </scroll-view>
+
+  <!-- 快捷提问 -->
+  <scroll-view class="quick-row" scroll-x wx:if="{{showSuggestions}}">
+    <view
+      class="quick-chip"
+      wx:for="{{suggestions}}"
+      wx:key="index"
+      bindtap="quickAsk"
+      data-q="{{item}}"
+    >{{item}}</view>
+  </scroll-view>
+
+  <!-- 输入栏 -->
+  <view class="chat-input-bar">
+    <input
+      class="chat-input"
+      placeholder="问我关于菜的问题…"
+      value="{{inputValue}}"
+      bindinput="onInput"
+      confirm-type="send"
+      bindconfirm="send"
+      disabled="{{sending}}"
+    />
+    <view class="chat-send {{sending || !inputValue ? 'disabled' : ''}}" bindtap="send">发送</view>
+  </view>
+
+  <view class="kb-foot" wx:if="{{kbStats}}">
+    知识库 {{kbStats.chunks}} 条 · 本地检索增强 · 答案仅供参考
+  </view>
+</view>

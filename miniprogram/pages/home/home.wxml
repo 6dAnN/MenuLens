@@ -68,3 +68,6 @@
 
   <view class="pad-bottom"></view>
 </view>
+
+<!-- 悬浮 AI 小助手头像 -->
+<ai-fab visible="{{true}}" />

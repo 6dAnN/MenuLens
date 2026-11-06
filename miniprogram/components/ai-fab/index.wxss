@@ -1,0 +1,57 @@
+/* 悬浮 AI 小助手头像 */
+.ai-fab {
+  position: fixed;
+  right: 32rpx;
+  bottom: 180rpx;
+  width: 110rpx;
+  height: 110rpx;
+  z-index: 999;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+.ai-fab.show { opacity: 1; transform: scale(1); }
+.ai-fab.hide { opacity: 0; transform: scale(0.6); pointer-events: none; }
+
+.fab-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF8A3D, #FF5F6D);
+  box-shadow: 0 8rpx 24rpx rgba(255, 107, 53, 0.35);
+  animation: fab-pulse 2.4s ease-in-out infinite;
+}
+@keyframes fab-pulse {
+  0%, 100% { box-shadow: 0 8rpx 24rpx rgba(255, 107, 53, 0.35); }
+  50% { box-shadow: 0 8rpx 40rpx rgba(255, 107, 53, 0.55); }
+}
+
+.fab-face {
+  position: absolute;
+  inset: 10rpx;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fab-emoji {
+  font-size: 52rpx;
+  color: #FF6B35;
+  line-height: 1;
+}
+
+.fab-badge {
+  position: absolute;
+  top: -6rpx;
+  right: -6rpx;
+  min-width: 36rpx;
+  height: 36rpx;
+  padding: 0 8rpx;
+  border-radius: 18rpx;
+  background: #FF3B30;
+  color: #fff;
+  font-size: 20rpx;
+  line-height: 36rpx;
+  text-align: center;
+  font-weight: 600;
+  box-shadow: 0 2rpx 8rpx rgba(255, 59, 48, 0.4);
+}

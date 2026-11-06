@@ -116,3 +116,39 @@
   z-index: 80;
 }
 .fab:active { transform: scale(.92); }
+/* 置信度档位配色：<60% 必须视觉上就让人警惕 */
+.conf-txt.low { color: #E0533D; }
+.conf-txt.mid { color: #D99A28; }
+.conf-txt.high { color: #3FA34D; }
+.conf-dots .d.on.low { background: #E0533D; }
+.conf-dots .d.on.mid { background: #D99A28; }
+.conf-dots .d.on.high { background: #3FA34D; }
+.hd-source {
+  margin-top: 8rpx;
+  font-size: 21rpx;
+  color: #A08D7C;
+}
+
+/* 模型看到的线索 */
+.evidence-card { margin-top: 24rpx; }
+.ev-line {
+  display: flex;
+  font-size: 26rpx;
+  color: #5C5148;
+  line-height: 1.7;
+}
+.ev-dot { color: #FF6B35; margin-right: 10rpx; }
+.ev-uncertain {
+  margin-top: 16rpx;
+  padding: 14rpx 18rpx;
+  background: #FFF7E8;
+  border-radius: 12rpx;
+  font-size: 24rpx;
+  color: #9A7326;
+  line-height: 1.6;
+}
+.ev-alt {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #A08D7C;
+}

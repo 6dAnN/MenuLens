@@ -11,6 +11,7 @@ const planner = require('./planner.js');
 const dishes = require('./dishes.js');
 const cloudAI = require('./ai-cloud.js');
 const difyAI = require('./api.js');
+const rag = require('./rag.js');
 
 function currentEngine() {
   try {
@@ -69,5 +70,5 @@ module.exports = {
   parseMenu, generatePlan, recognizeDish, generateRecipe, chat,
   detectIntent, isJailbreak, parseConstraintPatch, localReply,
   hardFilter, getLastError, clearLastError,
-  planner, dishes, cloudAI
+  planner, dishes, cloudAI, rag
 };

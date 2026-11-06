@@ -1,0 +1,223 @@
+app:
+  description: MenuLens 拍照识菜 —— 图片输入 → 视觉模型识别 → 知识库检索 → 结构化菜品档案
+  icon: 🍽️
+  icon_background: '#FF6B35'
+  mode: workflow
+  name: menulens-dish-recognize
+  use_icon_as_answer_icon: false
+kind: app
+version: 0.1.5
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      enabled: true
+      image:
+        enabled: true
+        number_limits: 3
+        transfer_methods:
+          - local_file
+          - remote_url
+    opening_statement: ''
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+      - data:
+          isInIteration: false
+          sourceType: start
+          targetType: llm
+        id: start-llm
+        source: start
+        sourceHandle: source
+        target: vision
+        targetHandle: target
+        type: custom
+      - data:
+          isInIteration: false
+          sourceType: llm
+          targetType: knowledge-retrieval
+        id: vision-kb
+        source: vision
+        sourceHandle: source
+        target: kb
+        targetHandle: target
+        type: custom
+      - data:
+          isInIteration: false
+          sourceType: knowledge-retrieval
+          targetType: end
+        id: kb-end
+        source: kb
+        sourceHandle: source
+        target: end
+        targetHandle: target
+        type: custom
+    nodes:
+      - data:
+          desc: ''
+          selected: false
+          title: 开始
+          type: start
+          variables:
+            - label: image
+              max_length: 1048576
+              options: []
+              required: true
+              type: text-input
+              variable: image
+        height: 54
+        id: start
+        position:
+          x: 30
+          y: 258
+        positionAbsolute:
+          x: 30
+          y: 258
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          context:
+            enabled: false
+            variable_selector: []
+          desc: 视觉模型识别菜品，输出结构化 JSON
+          model:
+            completion_params:
+              temperature: 0.1
+            mode: chat
+            name: gpt-4o
+            provider: openai
+          prompt_template:
+            - id: system
+              role: system
+              text: |
+                你是 MenuLens 的菜品识别引擎。用户上传一张菜品照片（可能以 base64 文本传入 inputs.image，或由工作流上游提供图片 URL）。
+                你的唯一任务：识别图片中的菜品，输出结构化 JSON。
+
+                硬性规则：
+                1. 只识别图片中【主体那道菜】，忽略背景、餐具、菜单文字。
+                2. 菜名用中文，若不确定给出最可能的名称，并把 confidence 设低（<0.6）。
+                3. 判断菜系、类别（荤菜/素菜/凉菜/主食/汤/甜品/饮品）、辣度（0-1）、主要食材。
+                4. 涉及过敏原时，列出 allergens（从：花生/坚果/海鲜/甲壳类/乳制品/麸质/蛋/大豆/芝麻 中选）。
+                5. 给出 1-2 条可操作的做法要点 tips。
+                6. 只输出 JSON，不要任何解释文字。
+            - id: user
+              role: user
+              text: '{{#start.image#}}'
+          selected: false
+          structured_output_enabled: true
+          structured_output_json:
+            name: 菜品档案
+            schema: |-
+              {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "description": "菜品中文名" },
+                  "name_en": { "type": "string", "description": "英文名" },
+                  "confidence": { "type": "number", "description": "0-1 置信度" },
+                  "cuisine": { "type": "string" },
+                  "region": { "type": "string" },
+                  "category": { "type": "string", "enum": ["荤菜","素菜","凉菜","主食","汤","甜品","饮品"] },
+                  "flavor_text": { "type": "string", "description": "风味描述" },
+                  "ingredients": { "type": "array", "items": { "type": "string" } },
+                  "allergens": { "type": "array", "items": { "type": "string" } },
+                  "spicy": { "type": "number", "description": "0-1 辣度" },
+                  "tips": { "type": "string", "description": "做法要点" },
+                  "time": { "type": "number", "description": "烹饪耗时分钟" },
+                  "difficulty": { "type": "number", "description": "1-4 难度" }
+                },
+                "required": ["name", "confidence", "category"]
+              }
+          title: 视觉识别
+          type: llm
+          variables: []
+          vision:
+            enabled: true
+        height: 98
+        id: vision
+        position:
+          x: 320
+          y: 258
+        positionAbsolute:
+          x: 320
+          y: 258
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          context:
+            enabled: true
+            variable_selector:
+              - vision
+              - text
+          desc: 检索菜品知识库，补全菜品档案
+          dataset_ids: []
+          multiple_retrieval_config:
+            reranking_enable: false
+          query_variable_selector:
+            - vision
+            - text
+          retrieval_mode: multiple
+          score_threshold: 0.4
+          selected: false
+          title: 知识库检索
+          top_k: 3
+          type: knowledge-retrieval
+        height: 100
+        id: kb
+        position:
+          x: 610
+          y: 258
+        positionAbsolute:
+          x: 610
+          y: 258
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          desc: 输出菜品档案
+          outputs:
+            - type: string
+              value_selector:
+                - vision
+                - text
+              variable: result
+          selected: false
+          title: 结束
+          type: end
+        height: 54
+        id: end
+        position:
+          x: 900
+          y: 258
+        positionAbsolute:
+          x: 900
+          y: 258
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+    viewport:
+      x: 0
+      y: 0
+      zoom: 1

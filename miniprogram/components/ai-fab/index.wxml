@@ -1,0 +1,8 @@
+<!-- 悬浮 AI 小助手头像 -->
+<view class="ai-fab {{visible ? 'show' : 'hide'}}" bindtap="onTap">
+  <view class="fab-ring"></view>
+  <view class="fab-face">
+    <text class="fab-emoji">✦</text>
+  </view>
+  <view class="fab-badge">AI</view>
+</view>

@@ -4,7 +4,8 @@
     "pages/menu/menu",
     "pages/dish/dish",
     "pages/recipe/recipe",
-    "pages/mine/mine"
+    "pages/mine/mine",
+    "pages/assistant/assistant"
   ],
   "window": {
     "backgroundTextStyle": "light",

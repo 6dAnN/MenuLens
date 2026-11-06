@@ -1,6 +1,7 @@
 {
   "usingComponents": {
-    "nav-bar": "/components/nav-bar/index"
+    "nav-bar": "/components/nav-bar/index",
+    "ai-fab": "/components/ai-fab/index"
   },
   "navigationStyle": "custom"
 }

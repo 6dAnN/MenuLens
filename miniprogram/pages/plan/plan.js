@@ -107,7 +107,7 @@ Page({
     wx.showToast({ title: '卡片已生成', icon: 'none' });
   },
   openChat() {
-    wx.showToast({ title: 'AI 助手', icon: 'none' });
+    wx.navigateTo({ url: '/pages/assistant/assistant' });
   },
-  onAsk() { wx.showToast({ title: 'AI 助手', icon: 'none' }); }
+  onAsk() { wx.navigateTo({ url: '/pages/assistant/assistant' }); }
 });

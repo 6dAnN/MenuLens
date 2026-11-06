@@ -48,11 +48,12 @@
         <view class="hd-en">{{dish.en}}</view>
         <view class="hd-conf">
           <view class="conf-dots">
-            <view class="d {{index < 5 ? 'on hi' : ''}}" wx:for="{{[1,2,3,4,5]}}" wx:key="*this"></view>
+            <view class="d {{index <= dish.confidence * 5 ? 'on ' + confLevel : ''}}" wx:for="{{[1,2,3,4,5]}}" wx:key="*this"></view>
           </view>
-          <text class="conf-txt hi">{{confLabel}}</text>
+          <text class="conf-txt {{confLevel}}">{{confLabel}}</text>
           <text class="conf-src" bindtap="onSource">来源 ▸</text>
         </view>
+        <view class="hd-source">{{sourceLabel}}</view>
       </view>
     </view>
 
@@ -78,6 +79,20 @@
       </view>
     </view>
 
+    <!-- 模型看到的线索：置信度不是凭空一个百分比，要能追溯 -->
+    <view class="card evidence-card" wx:if="{{evidence.length}}">
+      <view class="card-title">模型看到的线索</view>
+      <view class="ev-line" wx:for="{{evidence}}" wx:key="*this">
+        <text class="ev-dot">·</text><text>{{item}}</text>
+      </view>
+      <view class="ev-uncertain" wx:if="{{uncertainty}}">
+        <text>拿不准的地方：{{uncertainty}}</text>
+      </view>
+      <view class="ev-alt" wx:if="{{alternatives.length}}">
+        <text>也可能是：{{alternatives}}</text>
+      </view>
+    </view>
+
     <view class="notice-bar warn">
       <text>⚠</text>
       <text>可能含：{{allergenText}}　·　建议以餐厅实际为准</text>
@@ -94,4 +109,5 @@
   </block>
 </view>
 
-<view class="fab" wx:if="{{hasResult}}" bindtap="onAsk">✦</view>
+<!-- 悬浮 AI 小助手头像（全页面） -->
+<ai-fab visible="{{true}}" />

@@ -164,6 +164,45 @@ async function resolveModel() {
 }
 
 /**
+ * 选一个支持图像输入的模型。
+ *
+ * 识菜必须有视觉能力，纯文本模型接 base64 会直接报错。
+ * 用户手动指定的模型若不支持图片，也不能硬用——退回目录里的视觉默认。
+ */
+async function resolveVisionModel() {
+  const saved = store.get('aiVisionModel');
+  let models = [];
+  try {
+    models = await listModels();
+  } catch (e) {
+    console.warn('[cloud] 模型目录拉取失败：', e && e.message);
+  }
+  const vision = (models || []).filter(m => m.selectable && m.supportsImages);
+
+  if (saved) {
+    const hit = vision.find(m => m.id === saved);
+    if (hit) return hit.id;
+    // 用户选过但已下线/不再支持图片 → 继续往下挑，不要返回不可用的 id
+  }
+  if (!vision.length) return null;
+
+  // auto 是服务端路由模型，带图片时最稳；没有就用第一个视觉模型
+  const preferred = vision.find(m => m.id === 'auto') ||
+    vision.find(m => m.isDefault) ||
+    vision[0];
+  store.set('aiVisionModel', preferred.id);
+  return preferred.id;
+}
+
+/** 把 dataURL / base64 统一成 messages 里 image_url 能吃的形式 */
+function toImagePart(imageBase64) {
+  const raw = String(imageBase64 || '').trim();
+  if (!raw) return null;
+  const url = /^data:image\//.test(raw) ? raw : 'data:image/jpeg;base64,' + raw;
+  return { type: 'image_url', image_url: { url } };
+}
+
+/**
  * 统一的流式对话调用。
  *
  * ⚠ 云服务只支持流式（stream:true），非流式请求会在发出网络请求前
@@ -274,6 +313,8 @@ module.exports = {
   notBuiltHint,
   listModels,
   resolveModel,
+  resolveVisionModel,
+  toImagePart,
   chat,
   askJSON,
   parseLooseJSON,

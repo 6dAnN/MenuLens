@@ -245,6 +245,7 @@ const jsList = lsOut
   : [];
 for (const rel of jsList) {
   if (rel.indexOf('wb-sdk.js') >= 0) continue;   // SDK 官方产物跳过
+  if (rel.indexOf('tests/') === 0 || rel.indexOf('tests\\') === 0) continue;  // 测试桩 key 不算真实凭证
   if (scanCommitted(rel) !== null) checked++;
 }
 
