@@ -22,10 +22,16 @@
     >
       <view class="msg-avatar" wx:if="{{item.role === 'assistant'}}">✦</view>
       <view class="msg-wrap">
-        <view class="msg-bubble {{item.failed ? 'failed' : ''}}">
+        <view class="msg-bubble {{item.failed ? 'failed' : ''}} {{item.stopped ? 'stopped' : ''}}">
           <text class="msg-text" user-select>{{item.text}}</text>
           <!-- 首字还没回来时给一个真实的状态说明，不是空转菊花 -->
           <text class="msg-cursor" wx:if="{{item.pending && sending}}">正在检索知识库…</text>
+          <text class="msg-stamp" wx:if="{{item.stopped}}">已停止</text>
+        </view>
+
+        <!-- 出错重试：不用重新打字 -->
+        <view class="msg-retry" wx:if="{{item.failed}}" bindtap="retry" data-i="{{index}}">
+          ↻ 重试这一条
         </view>
 
         <!-- 检索依据：让用户能核查 AI 引用了什么 -->
@@ -52,29 +58,50 @@
     <view id="msg-end"></view>
   </scroll-view>
 
-  <!-- 快捷提问 -->
-  <scroll-view class="quick-row" scroll-x wx:if="{{showSuggestions}}">
-    <view
-      class="quick-chip"
-      wx:for="{{suggestions}}"
-      wx:key="index"
-      bindtap="quickAsk"
-      data-q="{{item}}"
-    >{{item}}</view>
-  </scroll-view>
+  <!-- 分组快捷提问 -->
+  <view class="quick-panel" wx:if="{{showSuggestions}}">
+    <view class="quick-tabs">
+      <view
+        class="quick-tab {{activeGroup === item.key ? 'on' : ''}}"
+        wx:for="{{groups}}"
+        wx:key="key"
+        bindtap="switchGroup"
+        data-key="{{item.key}}"
+      >
+        <text class="qt-icon">{{item.icon}}</text>{{item.label}}
+      </view>
+    </view>
+    <view class="quick-list">
+      <block wx:for="{{groups}}" wx:for-item="g" wx:key="key">
+        <view
+          class="quick-chip"
+          wx:if="{{activeGroup === g.key}}"
+          wx:for="{{g.items}}"
+          wx:for-item="q"
+          wx:key="*this"
+          bindtap="quickAsk"
+          data-q="{{q}}"
+        >{{q}}</view>
+      </block>
+    </view>
+  </view>
 
   <!-- 输入栏 -->
   <view class="chat-input-bar">
     <input
       class="chat-input"
-      placeholder="问我关于菜的问题…"
+      placeholder="{{sending ? '生成中…点右侧可停止' : '问我关于菜的问题…'}}"
       value="{{inputValue}}"
       bindinput="onInput"
       confirm-type="send"
       bindconfirm="send"
       disabled="{{sending}}"
     />
-    <view class="chat-send {{sending || !inputValue ? 'disabled' : ''}}" bindtap="send">发送</view>
+    <!-- 生成中时「发送」变成「停止」，同一个位置不新增控件 -->
+    <view
+      class="chat-send {{sending ? 'stop' : ''}} {{!sending && !inputValue ? 'disabled' : ''}}"
+      bindtap="{{sending ? 'stopGenerate' : 'send'}}"
+    >{{sending ? '停止' : '发送'}}</view>
   </view>
 
   <view class="kb-foot" wx:if="{{kbStats}}">
