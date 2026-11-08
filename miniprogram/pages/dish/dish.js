@@ -159,18 +159,34 @@ Page({
     const lines = [];
 
     if (d.source === 'cloud') {
-      lines.push('视觉模型看图后给出 ' + confidence + '% 的把握。');
+      // 有对账折扣时，模型自评和展示值是两个数，必须都说清楚，
+      // 否则用户会以为被「偷偷降分」。
+      if (typeof d.modelConfidence === 'number' && d.modelConfidence !== d.confidence) {
+        lines.push('视觉模型自评 ' + Math.round(d.modelConfidence * 100) +
+          '%，与知识库对账后调整为 ' + confidence + '%。');
+      } else {
+        lines.push('视觉模型看图后给出 ' + confidence + '% 的把握，与知识库记录一致。');
+      }
       if (this.data.evidence.length) {
         lines.push('它看到的线索：' + this.data.evidence.join('；'));
       }
       if (d.uncertainty) {
         lines.push('它自己声明的不确定处：' + d.uncertainty);
       }
+      if (d.reconcileNotes && d.reconcileNotes.length) {
+        lines.push('对账更正的字段：' + d.reconcileNotes.join('；'));
+      }
+      if (d.reconcileReasons && d.reconcileReasons.length) {
+        lines.push('下调原因：' + d.reconcileReasons.join('；'));
+      }
+      if (d.kbMatched === false) {
+        lines.push('注意：这道菜不在知识库内，过敏原与辣度没有权威资料支撑，只能参考模型判断。');
+      }
       if (d.allergens && d.allergens.length) {
         lines.push('过敏原依据：' + d.allergens.join('、') + '（来自菜品本体标注，不是配料文本猜测）');
       }
       lines.push('');
-      lines.push('这个数字是模型的自评，不是概率计算结果。低于 60% 就说明它没把握，建议跟服务员核对。');
+      lines.push('这个数字是模型自评经知识库校准后的结果，不是概率计算。低于 60% 就说明它没把握，建议跟服务员核对。');
     } else {
       lines.push('当前是本地知识库兜底结果，不是 AI 看图识别的。');
       lines.push('云端模型不可用时会出现这种情况，置信度不具参考意义。');

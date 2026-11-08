@@ -18,6 +18,7 @@ const planner = require('./planner.js');
 const dishes = require('./dishes.js');
 const cloud = require('./cloud.js');
 const rag = require('./rag.js');
+const dishMatch = require('./dish-match.js');
 
 const config = {
   verbose: true,
@@ -253,13 +254,16 @@ const DISH_SYSTEM = [
   ' "allergens":["可能的过敏原，只能取：花生、坚果、海鲜、甲壳类、乳制品、麸质、蛋、大豆"],',
   ' "tips":"点这道菜时该注意什么，25字以内","pair_with":["建议搭配的菜，最多3个"],',
   ' "evidence":["你从照片里实际看到的视觉线索，如"红油浮在表面""表面撒了花生碎""深色砂锅"","最多3条],',
-  ' "uncertainty":"你这张照片里看不清、因此可能判断错的地方，一句话"]}',
+  ' "uncertainty":"你这张照片里看不清、因此可能判断错的地方，一句话",',
+  ' "in_kb":true或false——你给的这个菜名是否出现在候选清单里}',
   '规则：',
   '1. confidence 必须诚实反映你的把握。照片模糊、只拍到局部、菜品太常见难以区分时，给 0.4 以下。',
   '2. 不许为了显得专业而给高分。拿不准就把候选写进 alternatives。',
   '3. allergens 只写你有真实依据的（看到了花生碎、汤汁乳白等）；没有任何线索就给空数组，不要猜。',
   '4. evidence 必须是你真的从图里看到的，不许写「根据菜品特征」这种套话。',
-  '5. 如果照片里根本没有食物，name 填「未识别到菜品」并把 confidence 设为 0。'
+  '5. 如果照片里根本没有食物，name 填「未识别到菜品」并把 confidence 设为 0。',
+  '6. 菜名优先用知识库的标准写法。有候选清单时，能在清单里找到就原样照抄；',
+  '   实在没有对应的才自己起名，此时 in_kb 填 false——下游会据此提示用户「这道菜没有资料支撑」。'
 ].join('\n');
 
 /**
@@ -294,13 +298,19 @@ async function recognizeDish(imageBase64, fallbackDish, opts) {
     const imgPart = cloud.toImagePart(imageBase64);
     if (!imgPart) throw new Error('图片数据为空');
 
+    // 候选清单：把「菜单上的菜 + 高频菜」共 40 个交给模型挑选。
+    // 这一步对识别率的提升比换模型更明显——模型不必从零回忆菜名，
+    // 只需在候选里认亲，写错字、用方言名的情况大幅减少。
+    const hints = (opts && opts.hints) || [];
+    const candPrompt = dishMatch.candidatePrompt(hints, 40);
+
     const data = await cloud.askJSON({
       modelId,
       system: DISH_SYSTEM,
       messages: [{
         role: 'user',
         content: [
-          { type: 'text', text: '请识别这道菜，按约定格式输出 JSON。' },
+          { type: 'text', text: (candPrompt ? candPrompt + '\n\n' : '') + '请识别这道菜，按约定格式输出 JSON。' },
           imgPart
         ]
       }],
@@ -310,9 +320,9 @@ async function recognizeDish(imageBase64, fallbackDish, opts) {
     onStep(1);
     if (!data || !data.name) throw new Error('未识别出菜名');
 
-    const dish = normalizeVisionDish(data, fallback);
+    const dish = normalizeVisionDish(data, fallback, hints);
     onStep(2);
-    log('识别结果:', dish.name, dish.confidence);
+    log('识别结果:', dish.name, dish.confidence, dish.kbMatched ? '库内' : '库外');
     return dish;
   } catch (e) {
     onStep(2);
@@ -320,34 +330,63 @@ async function recognizeDish(imageBase64, fallbackDish, opts) {
   }
 }
 
-/** 视觉模型返回的原始字段名与本工程菜品档案不完全一致，统一归一化 */
-function normalizeVisionDish(d, fallback) {
+/**
+ * 视觉模型返回的原始字段名与本工程菜品档案不完全一致，统一归一化。
+ *
+ * 第二版：在归一化的同时做**知识库对账**（见 dish-match.js）。
+ * 模型给的菜系、辣度、过敏原都只当「线索」，与知识库记录冲突时以知识库为准，
+ * 并按冲突程度下调置信度——不一致本身就是识别可疑的信号，必须让用户看见。
+ */
+function normalizeVisionDish(d, fallback, hints) {
   const name = String(d.name || '').trim();
-  const db = dishes.lookupDish(name) || {};
   const fb = fallback || dishes.MOCK_DISH;
+
+  // 先与知识库对账，拿到标准名与修正后的字段
+  const matched = dishMatch.matchDish(name);
+  const rec = dishMatch.reconcile(d, matched);
+  // 归一后的菜名再查一次老库（dishes.DISH_DB），补齐做法、耗时等展示字段
+  const db = dishes.lookupDish(rec.name) || {};
 
   // 模型给的 confidence 必须落在 [0,1]，否则夹紧——它是 UI 上展示的核心数字
   let conf = typeof d.confidence === 'number' ? d.confidence : Number(d.confidence);
   if (!isFinite(conf)) conf = 0.5;
   conf = Math.max(0, Math.min(1, conf));
 
-  const allergens = sanitizeAllergens(d.allergens);
+  // 对账折扣：菜系/辣度/菜名写法与知识库不符时往下压。
+  // 压的是「这次识别的可信度」，不是模型的自评——所以两个都要展示。
+  const modelConf = conf;
+  conf = Math.round(conf * rec.discount * 100) / 100;
+
+  const allergens = sanitizeAllergens(rec.allergens ? rec.allergens.merged : d.allergens);
   const alternatives = Array.isArray(d.alternatives)
-    ? d.alternatives.map(x => String(x).trim()).filter(Boolean).slice(0, 2)
+    ? d.alternatives.map(x => {
+        const m = dishMatch.matchDish(String(x));
+        return m ? m.name : String(x).trim();
+      }).filter(Boolean).slice(0, 2)
     : [];
 
+  // 对账说明是「置信度为什么变了」的素材，要跟 evidence 一样摊开
+  const reasons = rec.reasons.slice();
+  if (modelConf !== conf) {
+    reasons.push('识别置信度 ' + modelConf.toFixed(2) + ' 经知识库对账后调整为 ' + conf.toFixed(2));
+  }
+
   return Object.assign({}, fb, {
-    name: name || fb.name,
+    name: rec.name || fb.name,
     nameEn: d.name_en || d.nameEn || db.nameEn || fb.nameEn || '',
     confidence: conf,
+    modelConfidence: modelConf,
     // 来源决定了首页状态条与「这个数字怎么来的」弹窗的文案
     source: 'cloud',
-    cuisine: d.cuisine || db.cuisine || fb.cuisine,
-    category: d.category || db.category || fb.category,
+    // 库内 / 库外：库外意味着过敏原等信息没有权威来源，UI 要提示
+    kbMatched: !!matched,
+    kbMatchHow: matched ? matched.how : '',
+    cuisine: rec.cuisine || db.cuisine || fb.cuisine,
+    category: rec.category || db.category || fb.category,
     desc: d.flavor_text || d.desc || db.desc || fb.desc,
     ingredients: pickArray(d.ingredients, db.ingredients || fb.ingredients),
     methods: pickArray(d.methods, db.methods || fb.methods),
-    spicy: typeof d.spicy === 'number' ? Math.max(0, Math.min(1, d.spicy)) : (db.spicy || 0),
+    spicy: typeof rec.spicy === 'number' ? rec.spicy : (db.spicy || 0),
     // 过敏原只信本体字段：模型没给就用知识库的，两处都没有就是空
     allergens,
     tips: d.tips || db.tips || fb.tips,
@@ -355,10 +394,12 @@ function normalizeVisionDish(d, fallback) {
     time: db.time || fb.time,
     difficulty: db.difficulty || fb.difficulty,
     servings: db.servings || fb.servings,
-    // 这两个字段是「置信度摊开给用户看」的素材，必须原样保留
+    // 这几个字段是「置信度摊开给用户看」的素材，必须原样保留
     evidence: Array.isArray(d.evidence) ? d.evidence.filter(Boolean).slice(0, 3) : [],
     uncertainty: String(d.uncertainty || ''),
-    alternatives
+    alternatives,
+    reconcileNotes: rec.adjust.map(a => a.field + ' 由「' + a.from + '」更正为「' + a.to + '」'),
+    reconcileReasons: reasons
   });
 }
 

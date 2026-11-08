@@ -30,12 +30,30 @@ const kb = require(path.join(utils, 'kb-data.js'));
 out.push('== 1. 知识库 ==');
 const st = rag.stats();
 t('chunk 数 > 20', st.chunks > 20, '实际 ' + st.chunks);
-t('覆盖两个源文档', Object.keys(st.files).length === 2, JSON.stringify(st.files));
+// 语料已从「单文件 + 食材」两份，扩成「菜品知识库分 4 卷 + 食材」共 5 个源文件。
+// 断言改成「两类来源都在」而不是死数字，避免以后再加分卷就要改测试。
+t('覆盖两类源文档',
+  Object.keys(st.files).some(f => /^菜品知识库/.test(f)) &&
+  Object.keys(st.files).some(f => /^食材/.test(f)),
+  JSON.stringify(st.files));
+t('菜品条目数 ≥ 700', st.chunks >= 700, '实际 ' + st.chunks);
 t('每条 chunk 都有标题', kb.chunks.every(c => !!c.title));
 t('每条 chunk 都有正文', kb.chunks.every(c => c.text && c.text.length > 20));
 t('每条 chunk 都有来源文件', kb.chunks.every(c => /\.md$/.test(c.source)));
-t('菜品条目带食材关键词', kb.chunks.filter(c => c.source === '菜品知识库.md')
+t('菜品条目带食材关键词', kb.chunks.filter(c => /^菜品知识库/.test(c.source))
   .every(c => Array.isArray(c.keywords) && c.keywords.length > 0));
+t('菜名不重复',
+  (() => {
+    const seen = {};
+    let dup = '';
+    kb.chunks.forEach(c => {
+      if (!/^菜品知识库/.test(c.source)) return;
+      if (seen[c.title]) dup = c.title;
+      seen[c.title] = true;
+    });
+    if (dup) out.push('      重复菜名：' + dup);
+    return !dup;
+  })());
 t('版本号是日期格式', /^\d{4}-\d{2}-\d{2}$/.test(kb.version), kb.version);
 
 /* ==========================================================================
@@ -143,15 +161,58 @@ t('证据最多 3 条', n1.evidence.length === 2);
 t('候选最多 2 个', n1.alternatives.length === 2, String(n1.alternatives.length));
 t('不确定项保留', n1.uncertainty === '看不清是否有葱花');
 
-// 置信度越界必须夹紧
-const over = ai.normalizeVisionDish({ name: 'X', confidence: 1.8 }, null);
-t('置信度 >1 被夹到 1', over.confidence === 1, String(over.confidence));
-const neg = ai.normalizeVisionDish({ name: 'X', confidence: -0.4 }, null);
-t('置信度 <0 被夹到 0', neg.confidence === 0, String(neg.confidence));
-const nan = ai.normalizeVisionDish({ name: 'X', confidence: 'abc' }, null);
-t('非法置信度回落 0.5', nan.confidence === 0.5, String(nan.confidence));
-const str = ai.normalizeVisionDish({ name: 'X', confidence: '0.7' }, null);
-t('字符串数字能被解析', str.confidence === 0.7, String(str.confidence));
+// 置信度越界必须夹紧。
+// 用库内菜品做基线：库外菜名会触发对账折扣 0.82，夹紧逻辑就测不清了。
+// 夹紧的判定看 modelConfidence（模型自评，未打折），confidence 是打折后的展示值。
+const over = ai.normalizeVisionDish({ name: '白切鸡', confidence: 1.8 }, null);
+t('置信度 >1 被夹到 1', over.modelConfidence === 1, String(over.modelConfidence));
+const neg = ai.normalizeVisionDish({ name: '白切鸡', confidence: -0.4 }, null);
+t('置信度 <0 被夹到 0', neg.modelConfidence === 0, String(neg.modelConfidence));
+const nan = ai.normalizeVisionDish({ name: '白切鸡', confidence: 'abc' }, null);
+t('非法置信度回落 0.5', nan.modelConfidence === 0.5, String(nan.modelConfidence));
+const str = ai.normalizeVisionDish({ name: '白切鸡', confidence: '0.7' }, null);
+t('字符串数字能被解析', str.modelConfidence === 0.7, String(str.modelConfidence));
+
+/* ==========================================================================
+   6.5 知识库对账（识菜精准度的第二道保险）
+   ========================================================================== */
+out.push('');
+out.push('== 6.5 识菜对账 ==');
+
+// 完全对的识别：不打折，且标记为库内
+t('库内菜品标记 kbMatched', n1.kbMatched === true);
+t('库内菜品不打折', n1.confidence === 0.91, String(n1.confidence));
+
+// 错字菜名要被纠回标准名，并打折
+const typo = ai.normalizeVisionDish({ name: '宫爆鸡丁', confidence: 0.9 }, null);
+t('错字菜名纠回「宫保鸡丁」', typo.name === '宫保鸡丁', typo.name);
+t('错字识别被打折', typo.confidence < 0.9, String(typo.confidence));
+t('记录模型原始置信度', typo.modelConfidence === 0.9, String(typo.modelConfidence));
+
+// 菜系判断错：以知识库为准
+const wrongCu = ai.normalizeVisionDish({ name: '宫保鸡丁', cuisine: '粤菜', confidence: 0.9 }, null);
+t('菜系以知识库为准', wrongCu.cuisine === '川菜', wrongCu.cuisine);
+t('对账说明含菜系更正', wrongCu.reconcileNotes.some(s => /cuisine/.test(s)),
+  JSON.stringify(wrongCu.reconcileNotes));
+
+// 过敏原必须含知识库记录的，不能因为模型没说就丢
+const noAllergen = ai.normalizeVisionDish({ name: '宫保鸡丁', confidence: 0.9, allergens: [] }, null);
+t('模型没提过敏原也保留知识库记录',
+  ['花生', '大豆', '蛋'].every(a => noAllergen.allergens.indexOf(a) >= 0),
+  noAllergen.allergens.join(','));
+
+// 库外菜品：打折 + 标记 + 说明
+const outside = ai.normalizeVisionDish({ name: '火星烤全羊', confidence: 0.9 }, null);
+t('库外菜品标记 kbMatched=false', outside.kbMatched === false);
+t('库外菜品被打折', outside.confidence < 0.9, String(outside.confidence));
+t('库外菜品给出说明', outside.reconcileReasons.some(s => /未收录/.test(s)),
+  JSON.stringify(outside.reconcileReasons));
+
+// 候选清单应把知识库标准名带进提示词
+const dm = require(path.join(utils, 'dish-match.js'));
+const cp = dm.candidatePrompt(['宫保鸡丁'], 40);
+t('候选清单提示词非空', cp.length > 100, String(cp.length));
+t('候选清单含 in_kb 指令', /in_kb/.test(cp));
 
 // 模型的自由用词要映射到八大过敏原
 const map = ai.sanitizeAllergens(['虾', '鱼类', '牛奶', '小麦', '鸡蛋', '腰果', '豆腐', '不明物质']);
