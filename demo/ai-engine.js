@@ -18,6 +18,12 @@ var MOCK_RECIPES = window.MenuLensData.MOCK_RECIPES;
 var lookupDish = window.MenuLensData.lookupDish;
 var ALLERGENS = window.MenuLensData.ALLERGENS;
 
+/**
+ * 本地知识库检索（与微信小程序端算法同源，见 tools/build-demo-kb.js）。
+ * kb.js 不存在时降级为空检索——H5 仍能跑，只是回答不带知识库依据。
+ */
+var KB = (typeof window !== 'undefined' && window.MenuLensKB) || null;
+
 const config = {
   /** 真实服务地址。留空 = 本地确定性推理。 */
   apiEndpoint: '',
@@ -366,9 +372,130 @@ function parseConstraintPatch(text, ctx) {
   return patch;
 }
 
+/**
+ * 用本地知识库回答一道菜 / 一个主题的问题。
+ *
+ * 为什么不直接套模板：用户问「宫保鸡丁含花生吗」，模板只能回「含」；
+ * 而知识库里有菜系、食材、过敏原、风味、吃法，能拼出一段真正有用的回答。
+ * 这里把检索到的 chunk 的 markdown 表格解析成字段，再按问法挑重点。
+ *
+ * @returns {{text:string, hits:Array}|null} 没有检索结果时返回 null，交给原逻辑兜底
+ */
+function kbAnswer(text) {
+  if (!KB) return null;
+  const hits = KB.search(text, 3);
+  if (!hits.length) return null;
+
+  const top = hits[0];
+  const fields = parseKbFields(top.text);
+  const isDish = top.source && /^菜品知识库/.test(top.source);
+  const lines = [];
+
+  if (isDish) {
+    const tag = [fields['菜系'], fields['类别'], fields['定位']].filter(Boolean).join(' · ');
+    lines.push('**' + top.title + '**' + (tag ? '　' + tag : '') + '　' + (fields['参考价格'] || ''));
+    if (fields['主要食材']) lines.push('主要食材：' + fields['主要食材']);
+
+    // 按问法挑重点：问过敏原就先把过敏原顶上去，别让用户自己找。
+    // 「含花生吗」「有没有花生」这类问法也要认，不能只认「过敏」两个字。
+    const q = text;
+    const askingAllergen = /过敏|忌口|不能吃|安全|含|有.*吗|有没有|哪些成分/.test(q);
+    if (askingAllergen && fields['过敏原']) {
+      lines.push('过敏原：' + fields['过敏原'] + '（来自菜品本体标注，不是配料文本推测）');
+    }
+    if (/辣|口味|什么味|好吃/.test(q)) {
+      if (fields['辣度']) lines.push('辣度：' + fields['辣度'] + ' / 3 档');
+      if (fields['风味']) lines.push('风味：' + fields['风味']);
+    }
+    if (/怎么做|做法|复刻|在家/.test(q)) {
+      if (fields['烹饪方式']) lines.push('烹饪方式：' + fields['烹饪方式']);
+      if (fields['耗时']) lines.push('耗时：' + fields['耗时']);
+    }
+
+    // 描述段落是「怎么认、什么味」，放最后当补充
+    const desc = top.text.split('\n\n').pop();
+    if (desc && desc.length > 10 && desc.indexOf('|') < 0) {
+      lines.push('');
+      lines.push(desc);
+    }
+
+    if (hits.length > 1) {
+      lines.push('');
+      lines.push('相关资料：' + hits.slice(1).map(h => '「' + h.title + '」').join('、'));
+    }
+    return { text: lines.join('\n'), hits };
+  }
+
+  // 主题型条目（人群建议 / 过敏原表 / 点单原则）：正文本身就是答案。
+  // 但「营养成分与人群建议」是一张六行大表，整块贴出来用户要自己找行——
+  // 所以先按问句里的人群词把相关行提出来，再附完整表格。
+  lines.push('**' + top.title + '**');
+  lines.push('');
+  const focused = focusRow(text, top.text);
+  if (focused) {
+    lines.push(focused);
+    lines.push('');
+    lines.push('完整对照表：');
+  }
+  lines.push(top.text);
+  if (hits.length > 1) {
+    lines.push('');
+    lines.push('另外还查到了：' + hits.slice(1).map(h => '「' + h.title + '」').join('、'));
+  }
+  return { text: lines.join('\n'), hits };
+}
+
+/**
+ * 从 markdown 表格里挑出与问句人群/条件相关的那一行。
+ * 例：「孕妇能吃生鱼片吗」→ 命中「孕妇」那行，转成一句话。
+ */
+function focusRow(query, tableText) {
+  const ROWS = {
+    孕妇: /孕妇|怀孕|备孕|哺乳/,
+    儿童: /儿童|小孩|孩子|宝宝|娃/,
+    三高: /三高|血压|血脂|血糖|糖尿病/,
+    痛风: /痛风|尿酸/,
+    减脂期: /减脂|减肥|低卡|瘦身/,
+    素食者: /素食|吃素/
+  };
+  const key = Object.keys(ROWS).find(k => ROWS[k].test(query));
+  if (!key) return '';
+
+  const lines = String(tableText || '').split('\n');
+  const row = lines.find(l => l.indexOf('| ' + key) >= 0 || l.indexOf('|' + key) >= 0);
+  if (!row) return '';
+  const cells = row.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+  if (cells.length < 3) return '';
+
+  const out = ['**' + (cells[0] || key) + '**'];
+  if (cells[1]) out.push('可以点：' + cells[1]);
+  if (cells[2]) out.push('要避开：' + cells[2]);
+  if (cells[3]) out.push('原因：' + cells[3]);
+  return out.join('\n');
+}
+
+/** 把知识库 chunk 的 markdown 字段表解析成对象 */
+function parseKbFields(text) {
+  const out = {};
+  String(text || '').split('\n').forEach(line => {
+    const m = line.match(/^\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*$/);
+    if (m && m[1] !== '字段' && !/^-+$/.test(m[1])) out[m[1]] = m[2];
+  });
+  return out;
+}
+
 /** Agent 生成回复文本 */
 function agentReply(text, ctx, plan, menuItems) {
   const intent = detectIntent(text);
+
+  // 知识库优先：能答上来的事实类问题不该走模板。
+  // 约束修改 / 换菜 / 重新配桌这些「动作」必须先于知识库处理，
+  // 否则用户说「不吃辣」会被当成在问辣度。
+  const ACTION = { constraint: 1, swap: 1, recipe: 1 };
+  if (!ACTION[intent]) {
+    const kb = kbAnswer(text);
+    if (kb) return { text: kb.text, hits: kb.hits, kb: true };
+  }
 
   switch (intent) {
     case 'constraint': {
@@ -390,6 +517,22 @@ function agentReply(text, ctx, plan, menuItems) {
 
     case 'recipe': {
       const nameMatch = text.match(/([\u4e00-\u9fa5]{2,6})\s*(?:的)?(?:怎么做|做法|食谱)/);
+      // 知识库里有这道菜时，先把「烹饪方式 / 耗时 / 关键点」说出来，
+      // 再引导去底部看完整步骤——比只说「做法在下面」有信息量。
+      const kb = nameMatch ? kbAnswer(nameMatch[1]) : null;
+      if (kb) {
+        const f = parseKbFields(kb.hits[0].text);
+        const bits = [];
+        if (f['烹饪方式']) bits.push('方式：' + f['烹饪方式']);
+        if (f['耗时']) bits.push('耗时：' + f['耗时']);
+        if (f['难度']) bits.push('难度：' + f['难度'] + ' / 5');
+        const head = bits.length ? '\n核心信息　' + bits.join('　') + '\n' : '';
+        return {
+          text: kb.text + head + '\n完整步骤在下面 👇',
+          recipe: kb.hits[0].title,
+          hits: kb.hits
+        };
+      }
       const target = nameMatch ? nameMatch[1] : Object.keys(DISH_DB)[Math.floor(Math.random() * 8)];
       return { text: `「${target}」的做法已经在下面啦 👇`, recipe: target };
     }

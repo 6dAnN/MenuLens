@@ -641,6 +641,25 @@ body {
   margin-top: 7px; padding: 9px 11px; background: var(--bg-elevated);
   border-radius: 10px; font-size: 12px; color: var(--text-secondary); line-height: 1.6;
 }
+
+/* 知识库依据：可核查性是产品的差异化，展开就能看到查了哪几条 */
+.bubble .kb-src {
+  margin-top: 9px; border-top: 1px dashed var(--border-subtle);
+  padding-top: 8px;
+}
+.bubble .kb-src-head {
+  font-size: 12px; color: var(--text-tertiary); cursor: pointer;
+}
+.bubble .kb-src-body {
+  margin-top: 6px; display: flex; flex-direction: column; gap: 5px;
+}
+.bubble .kb-src-item {
+  display: flex; flex-direction: column; gap: 1px;
+  padding: 6px 9px; background: var(--bg-elevated); border-radius: 8px;
+  font-size: 12px;
+}
+.bubble .kb-src-item b { color: var(--text-primary); font-weight: 600; }
+.bubble .kb-src-item span { color: var(--text-tertiary); font-size: 11px; }
 .msg-img {
   width: 130px; height: 96px; border-radius: 13px;
   background: linear-gradient(135deg, #FFE3CC, #FFC79A);
@@ -995,4 +1014,34 @@ body {
 @media (max-width: 430px) {
   body { padding: 0; background: var(--bg-primary); }
   .phone { width: 100%; height: 100vh; border: none; border-radius: 0; box-shadow: none; }
+}
+/* 知识库正文里的 markdown 表格（人群建议、过敏原对照这类） */
+.bubble .md-table {
+  margin: 8px 0; font-size: 12px; border: 1px solid var(--border-subtle);
+  border-radius: 8px; overflow: hidden;
+}
+.bubble .md-tr {
+  display: flex; gap: 6px; padding: 6px 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+.bubble .md-tr:first-child { border-top: none; }
+.bubble .md-tr.md-th {
+  background: var(--bg-elevated); font-weight: 600; color: var(--text-primary);
+}
+.bubble .md-tr span { flex: 1; min-width: 0; word-break: break-all; line-height: 1.5; }
+
+/* 四列以上表格在窄气泡里会挤成竖条，改成横向滚动、列给最小宽度 */
+.bubble .md-table {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.bubble .md-tr {
+  display: inline-flex;
+  min-width: 100%;
+  align-items: flex-start;
+}
+.bubble .md-tr span {
+  flex: 0 0 auto;
+  width: 118px;
+  white-space: normal;
 }

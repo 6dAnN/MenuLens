@@ -1008,8 +1008,18 @@ function chatHTML() {
         ? `<div class="msg-img">${m.img}</div>`
         : `<div class="bubble">${esc(m.text)}</div>`}</div>`;
     }
-    return `<div class="msg ai"><div class="bubble">${nl2br(m.text)}
+    // 流式过程中先占位，等下面把 hits 补进来
+    const msgIdx = state.chat.length - 1;
+    return `<div class="msg ai"><div class="bubble">${mdLite(m.text)}
       ${m.source ? `<div class="src-toggle" data-act="toggle-src">▸ 来源：${esc(m.source)}</div>` : ''}
+      ${(m.hits && m.hits.length)
+        ? `<div class="kb-src">
+             <div class="kb-src-head">▸ 知识库依据 ${m.hits.length} 条</div>
+             <div class="kb-src-body">${m.hits.map(h =>
+               `<div class="kb-src-item"><b>${esc(h.title)}</b><span>${esc(h.source || '')} · 匹配 ${h.score}</span></div>`
+             ).join('')}</div>
+           </div>`
+        : ''}
     </div></div>`;
   }).join('')}</div>`;
 }
@@ -1023,6 +1033,49 @@ function thinkingHTML(m) {
 
 function nl2br(s) {
   return esc(s).replace(/\n/g, '<br>');
+}
+
+/**
+ * 聊天消息的轻量 markdown 渲染。
+ *
+ * 知识库正文本身是 markdown（`**加粗**`、`| 表格 |`），只做 esc + 换行会让
+ * 屏幕上出现一堆星号和竖线。这里只支持两种语法——加粗与表格——因为
+ * 知识库实际就用这两种；不引第三方库，保持 file:// 双击可用。
+ *
+ * 顺序很重要：**先转义再套标签**，否则用户/语料里的尖括号会被当 HTML 执行。
+ */
+function mdLite(s) {
+  const raw = String(s == null ? '' : s);
+  const lines = raw.split('\n');
+  const out = [];
+  let table = [];
+
+  const flushTable = () => {
+    if (!table.length) return;
+    const rows = table.filter(l => !/^\|[\s\-:|]+\|$/.test(l));
+    if (rows.length) {
+      const cells = rows.map(l => l.replace(/^\||\|$/g, '').split('|').map(c => c.trim()));
+      const head = cells[0];
+      const body = cells.slice(1);
+      out.push('<div class="md-table">' +
+        '<div class="md-tr md-th">' + head.map(c => '<span>' + inline(c) + '</span>').join('') + '</div>' +
+        body.map(r => '<div class="md-tr">' + r.map(c => '<span>' + inline(c) + '</span>').join('') + '</div>').join('') +
+        '</div>');
+    }
+    table = [];
+  };
+
+  const inline = t => esc(t).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+
+  lines.forEach(line => {
+    if (/^\s*\|.*\|\s*$/.test(line)) { table.push(line.trim()); return; }
+    flushTable();
+    out.push(inline(line));
+  });
+  flushTable();
+
+  // 空行折叠成段落间距，避免气泡里出现大片空白
+  return out.join('<br>').replace(/(<br>\s*){3,}/g, '<br><br>');
 }
 
 function scrollChat() {
@@ -1258,7 +1311,16 @@ async function sendChat(text) {
     if (changes.length) state.chat.push({ type: 'ctxchange', text: `约束已更新：${changes.join(' · ')}` });
   }
 
-  state.chat.push({ role: 'ai', text: rep.text, source: rep.source || (rep.remote ? '远端模型' : '本地 Agent 推理') });
+  state.chat.push({
+    role: 'ai',
+    text: rep.text,
+    // 有知识库依据时如实标注数据来源，别笼统写「本地推理」——
+    // 用户要能分清「查了资料」和「凭空生成的」
+    source: rep.source || (rep.hits && rep.hits.length
+      ? '本地知识库检索'
+      : (rep.remote ? '远端模型' : '本地 Agent 推理')),
+    hits: rep.hits || []
+  });
 
   // 触发重算
   if (rep.replan && state.menu) {
